@@ -1,8 +1,8 @@
-# mise-db
+# hako
 
-`mise-db` is a [mise](https://mise.jdx.dev/) backend plugin that provides a local database engine through containers.
+`hako` is a [mise](https://mise.jdx.dev/) backend plugin that provides a local database engine through containers.
 
-Install the plugin as `db`, add a database to `mise.toml`, then start, stop, and use the database with familiar binaries such as `pg_ctl`, `postgres`, `psql`, `pg_dump`, and `pg_restore`. Those binaries are wrappers around a versioned PostgreSQL OCI image, so they feel like native tools while the database engine runs in a managed container.
+Install the plugin as `hako`, add a database to `mise.toml`, then start, stop, and use the database with familiar binaries such as `pg_ctl`, `postgres`, `psql`, `pg_dump`, and `pg_restore`. Those binaries are wrappers around a versioned PostgreSQL OCI image, so they feel like native tools while the database engine runs in a managed container.
 
 Current status: PostgreSQL on Docker and Apple Container.
 
@@ -16,13 +16,13 @@ Current status: PostgreSQL on Docker and Apple Container.
 ## Install The Plugin
 
 ```bash
-mise plugin install db https://github.com/lcmen/mise-db
+mise plugin install hako https://github.com/lcmen/hako
 ```
 
 For local development of this plugin:
 
 ```bash
-mise plugin link db /path/to/mise-db
+mise plugin link hako /path/to/hako
 ```
 
 ## Add database
@@ -30,10 +30,10 @@ mise plugin link db /path/to/mise-db
 Add PostgreSQL to `mise.toml`:
 
 ```bash
-mise use db:postgres@18.4
+mise use hako:postgres@18.4
 ```
 
-During install, `mise-db` pulls:
+During install, `hako` pulls:
 
 ```text
 postgres:18.4-alpine
@@ -44,10 +44,10 @@ and installs wrapper commands into the mise tool installation. The selected runt
 Version discovery is cached for 24 hours in:
 
 ```text
-${XDG_CACHE_HOME:-$HOME/.cache}/mise-db/postgres.json
+${XDG_CACHE_HOME:-$HOME/.cache}/hako/postgres.json
 ```
 
-Set `MISE_DB_CACHE=0` to bypass the registry cache for a single run.
+Set `HAKO_CACHE=0` to bypass the registry cache for a single run.
 
 ## Use database
 
@@ -61,13 +61,13 @@ pg_ctl stop
 
 ## Container Runtime
 
-During `mise install`, mise-db prefers a usable Apple Container service, then a usable Docker daemon. Set `MISE_DB_ADAPTER` in mise config before installing to choose explicitly:
+During `mise install`, hako prefers a usable Apple Container service, then a usable Docker daemon. Set `HAKO_ADAPTER` in mise config before installing to choose explicitly:
 
 ```toml
 # ~/.config/mise/config.toml
 [env]
-MISE_DB_ADAPTER = "apple"
-# MISE_DB_ADAPTER = "docker"
+HAKO_ADAPTER = "apple"
+# HAKO_ADAPTER = "docker"
 ```
 
 Apple Container must be installed and started first:
@@ -76,10 +76,10 @@ Apple Container must be installed and started first:
 container system start
 ```
 
-Changing `MISE_DB_ADAPTER` after installation is rejected so wrappers never mix runtimes. Force-reinstall with the intended adapter instead:
+Changing `HAKO_ADAPTER` after installation is rejected so wrappers never mix runtimes. Force-reinstall with the intended adapter instead:
 
 ```bash
-mise install --force db:postgres@18.4
+mise install --force hako:postgres@18.4
 ```
 
 ## Isolation
@@ -87,14 +87,14 @@ mise install --force db:postgres@18.4
 By default, database runs in global mode which gives you one database container instance for the selected version. Use `isolated = true` to create a project-specific instance, i.e.:
 
 ```bash
-mise use 'db:postgres@18.4[isolated=true]'
+mise use 'hako:postgres@18.4[isolated=true]'
 ```
 
 This lets different projects use the same PostgreSQL version without sharing the same container or data directory.
 
 ## Hostnames For Applications
 
-By default, wrappers connect through the selected runtime's shared `mise-db` network and no database container host is exposed to applications.
+By default, wrappers connect through the selected runtime's shared `hako` network and no database container host is exposed to applications.
 
 To expose stable container hostnames with Apple Container, create a local DNS domain and configure the same TLD in mise:
 
@@ -105,13 +105,13 @@ sudo container system dns create container
 ```toml
 # ~/.config/mise/config.toml
 [env]
-MISE_DB_CONTAINER_TLD = "container"
+HAKO_DOMAIN = "container"
 ```
 
-Apple Container resolves named containers as `<container-name>.<domain>`. `mise-db` creates the persistent container with a deterministic name, so when `MISE_DB_CONTAINER_TLD` is available to mise, activation exports the database host using the tool's environment convention:
+Apple Container resolves named containers as `<container-name>.<domain>`. `hako` creates the persistent container with a deterministic name, so when `HAKO_DOMAIN` is available to mise, activation exports the database host using the tool's environment convention:
 
 ```text
-PGHOST=mise-db-postgres-18-4-myapp-0abc.container
+PGHOST=hako-postgres-18-4-myapp-0abc.container
 ```
 
 Rails can then use the activated environment:
@@ -131,7 +131,7 @@ DNS must resolve the generated hostname to an address reachable from the host. A
 Database files are stored outside the mise install directory:
 
 ```text
-${XDG_DATA_HOME:-$HOME/.local/share}/mise-db/postgres/<version>/<instance>
+${XDG_DATA_HOME:-$HOME/.local/share}/hako/postgres/<version>/<instance>
 ```
 
 Stopping PostgreSQL removes the container but keeps the data directory.
@@ -143,14 +143,14 @@ Uninstalling the mise tool does not delete database data.
 Each runtime uses one shared network in its own runtime namespace:
 
 ```text
-mise-db
+hako
 ```
 
 `pg_ctl start` creates a persistent container and waits until PostgreSQL is ready before returning. Docker uses a container healthcheck; Apple Container polls `pg_isready` inside the managed container.
 
 Client commands run in short-lived containers on the shared network. Docker clients connect to the managed container by name; Apple Container clients connect to its IPv4 address on that network.
 
-If the selected runtime removes the image later, wrappers fail with a clear message. Run `mise install --force db:postgres@18.4` to pull the image back.
+If the selected runtime removes the image later, wrappers fail with a clear message. Run `mise install --force hako:postgres@18.4` to pull the image back.
 
 ## Current Limitations
 

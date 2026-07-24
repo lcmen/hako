@@ -35,7 +35,7 @@ local function pull_image(image, resolved_adapter)
 
     cmd.exec(
         "printf '%s\n' "
-            .. utils.shell_quote("mise-db: pulling " .. image .. " with " .. resolved_adapter .. "...")
+            .. utils.shell_quote("hako: pulling " .. image .. " with " .. resolved_adapter .. "...")
             .. " >&2"
     )
 
@@ -46,7 +46,7 @@ local function pull_image(image, resolved_adapter)
     end
 
     cmd.exec(pull_command .. " >&2")
-    cmd.exec("printf '%s\n' " .. utils.shell_quote("mise-db: pulled " .. image) .. " >&2")
+    cmd.exec("printf '%s\n' " .. utils.shell_quote("hako: pulled " .. image) .. " >&2")
 end
 
 --- Writes the wrapper manifest consumed by installed command symlinks.

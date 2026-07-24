@@ -17,7 +17,7 @@ end
 ---@return table value Cached or fresh value.
 function M.caching(name, callback)
     if not M.enabled() then
-        io.stderr:write("mise-db: registry cache disabled; fetching data from Docker Hub...\n")
+        io.stderr:write("hako: registry cache disabled; fetching data from Docker Hub...\n")
         return callback()
     end
 
@@ -25,18 +25,18 @@ function M.caching(name, callback)
     if M.path_exists(path) and M.fresh(path) then
         local value = M.read_json(path)
         if value ~= nil then
-            io.stderr:write("mise-db: using cached registry data from " .. path .. "\n")
+            io.stderr:write("hako: using cached registry data from " .. path .. "\n")
             return value
         end
     end
 
-    io.stderr:write("mise-db: registry cache missing/expired; fetching data from Docker Hub...\n")
+    io.stderr:write("hako: registry cache missing/expired; fetching data from Docker Hub...\n")
     local value = callback()
     M.write_json(path, value)
     return value
 end
 
---- Builds the mise-db cache directory path.
+--- Builds the hako cache directory path.
 ---@return string path Cache directory path.
 function M.dir()
     local base = os.getenv("XDG_CACHE_HOME")
@@ -48,13 +48,13 @@ function M.dir()
         base = home .. "/.cache"
     end
 
-    return base .. "/mise-db"
+    return base .. "/hako"
 end
 
 --- Returns whether registry caching is enabled.
 ---@return boolean enabled True when cache reads and writes are enabled.
 function M.enabled()
-    return os.getenv("MISE_DB_CACHE") ~= "0"
+    return os.getenv("HAKO_CACHE") ~= "0"
 end
 
 --- Builds a cache file path.

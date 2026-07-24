@@ -37,7 +37,7 @@ byte_sum() {
 container_name() {
   local tool="${TOOL:?TOOL is required}"
   local version="${VERSION:?VERSION is required}"
-  printf 'mise-db-%s-%s-%s\n' "$tool" "$(version_tag "$version")" "$(instance_name)"
+  printf 'hako-%s-%s-%s\n' "$tool" "$(version_tag "$version")" "$(instance_name)"
 }
 
 #######################################
@@ -55,7 +55,7 @@ container_name() {
 #######################################
 data_dir() {
   local base="${XDG_DATA_HOME:-$HOME/.local/share}"
-  printf '%s/mise-db/%s/%s/%s\n' "$base" "$TOOL" "$VERSION" "$(instance_name "$TOOL")"
+  printf '%s/hako/%s/%s/%s\n' "$base" "$TOOL" "$VERSION" "$(instance_name "$TOOL")"
 }
 
 #######################################

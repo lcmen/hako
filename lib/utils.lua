@@ -87,7 +87,7 @@ end
 ---@param isolated boolean Whether project isolation is enabled.
 ---@return string container Container name.
 function M.container_name(tool, version, isolated)
-    return "mise-db-" .. tool .. "-" .. M.version_tag(version) .. "-" .. M.instance_name(isolated)
+    return "hako-" .. tool .. "-" .. M.version_tag(version) .. "-" .. M.instance_name(isolated)
 end
 
 --- Builds the instance identity for global or isolated mode.
@@ -119,15 +119,15 @@ end
 --- Resolves the runtime adapter for an installation.
 ---@return string adapter "apple" or "docker"
 function M.resolve_adapter()
-    local requested = os.getenv("MISE_DB_ADAPTER")
+    local requested = os.getenv("HAKO_ADAPTER")
 
     if requested ~= nil and requested ~= "" then
-        return adapter_available(requested) or error("mise-db adapter " .. requested .. " is not available")
+        return adapter_available(requested) or error("hako adapter " .. requested .. " is not available")
+    else
+        return adapter_available("apple")
+            or adapter_available("docker")
+            or error("hako requires a running Apple Container or Docker daemon")
     end
-
-    return adapter_available("apple")
-        or adapter_available("docker")
-        or error("mise-db requires a running Apple Container service or Docker daemon")
 end
 
 --- Converts arbitrary text into a lowercase slug.

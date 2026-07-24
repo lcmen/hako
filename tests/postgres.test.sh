@@ -32,7 +32,7 @@ versions_test() {
   local cache_dir output
 
   cache_dir="$(create_cache "$ROOT_DIR" postgres)"
-  output="$(MISE_DB_ADAPTER="$adapter" XDG_CACHE_HOME="$cache_dir" mise ls-remote db:postgres)"
+  output="$(HAKO_ADAPTER="$adapter" XDG_CACHE_HOME="$cache_dir" mise ls-remote hako:postgres)"
 
   assert 12 <<<"$output"
   assert 13 <<<"$output"
@@ -50,7 +50,7 @@ service_test() {
   run "$adapter" "$install_dir" pg_ctl status
   run "$adapter" "$install_dir" psql -c 'select 1 as ok;'
   run "$adapter" "$install_dir" psql --set ON_ERROR_STOP=1 <"$ROOT_DIR/tests/fixtures/dump.sql"
-  run "$adapter" "$install_dir" psql --set ON_ERROR_STOP=1 -c 'drop table mise_db_restore_fixture;'
+  run "$adapter" "$install_dir" psql --set ON_ERROR_STOP=1 -c 'drop table hako_restore_fixture;'
   run "$adapter" "$install_dir" pg_dump --format=custom --file "$dump_file" postgres
   run "$adapter" "$install_dir" pg_restore --dbname postgres "$dump_file"
 }

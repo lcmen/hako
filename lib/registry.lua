@@ -53,7 +53,7 @@ local function fetch_tags(repository, name_filter)
     end
 
     while url do
-        io.stderr:write("mise-db: fetching tag page " .. tostring(page) .. "...\n")
+        io.stderr:write("hako: fetching tag page " .. tostring(page) .. "...\n")
         local body = fetch(url)
         local response = decode_tags_response(body, url)
         for _, tag in ipairs(response.results or {}) do

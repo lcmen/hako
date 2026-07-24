@@ -39,9 +39,9 @@ function M.exec_env(ctx)
         { key = "PGUSER", value = "postgres" },
     }
 
-    local container_tld = os.getenv("MISE_DB_CONTAINER_TLD")
-    if container_tld ~= nil and container_tld ~= "" then
-        local host = container .. "." .. container_tld
+    local domain = os.getenv("HAKO_DOMAIN")
+    if domain ~= nil and domain ~= "" then
+        local host = container .. "." .. domain
         table.insert(env_vars, { key = "PGHOST", value = host })
     end
 

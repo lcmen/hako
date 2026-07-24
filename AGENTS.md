@@ -2,31 +2,31 @@
 
 ## Project
 
-This repository implements **mise-db**, a custom **mise backend plugin** that installs versioned database command wrappers backed by OCI images.
+This repository implements **hako**, a custom **mise backend plugin** that installs versioned database command wrappers backed by OCI images.
 
 The GitHub repository is:
 
 ```text
-lcmen/mise-db
+lcmen/hako
 ```
 
 The mise plugin name is:
 
 ```text
-db
+hako
 ```
 
 Users should install it with:
 
 ```bash
-mise plugin install db https://github.com/lcmen/mise-db
+mise plugin install hako https://github.com/lcmen/hako
 ```
 
 Then use it in `mise.toml`:
 
 ```toml
 [tools]
-"db:postgres" = { version = "18.4", isolated = true }
+"hako:postgres" = { version = "18.4", isolated = true }
 ```
 
 The previous native-binary release direction has been superseded by the container-backed wrapper direction. Do not add CI for compiling or packaging database binaries unless the project explicitly reverses that decision.
@@ -39,9 +39,9 @@ The current implementation is a PostgreSQL-only OCI-wrapper MVP with Docker and 
 
 Implemented:
 
-- `BackendListVersions` returns PostgreSQL versions discovered from Docker Hub tags via `lib/registry.lua`, with a 24-hour cache managed by `lib/cache.lua`. Set `MISE_DB_CACHE=0` to bypass the cache.
+- `BackendListVersions` returns PostgreSQL versions discovered from Docker Hub tags via `lib/registry.lua`, with a 24-hour cache managed by `lib/cache.lua`. Set `HAKO_CACHE=0` to bypass the cache.
 - `BackendInstall` validates `postgres`, resolves an Apple Container or Docker adapter, pulls `postgres:<version>-alpine`, copies wrappers into the mise install path, writes a manifest, and creates command symlinks.
-- `BackendExecEnv` adds the install `bin/` directory to `PATH`, sets basic PostgreSQL credentials, and sets `PGHOST` when `MISE_DB_CONTAINER_TLD` is configured.
+- `BackendExecEnv` adds the install `bin/` directory to `PATH`, sets basic PostgreSQL credentials, and sets `PGHOST` when `HAKO_DOMAIN` is configured.
 - PostgreSQL wrappers manage persistent server containers and short-lived client containers through the manifest-selected adapter.
 - Docker healthchecks and Apple Container `pg_isready` polling are used for readiness.
 - `tests/postgres.test.sh` smoke-tests both adapters.
@@ -59,7 +59,7 @@ Not implemented yet:
 
 ## Product Direction
 
-`mise-db` should be treated as:
+`hako` should be treated as:
 
 ```text
 A mise backend plugin that installs versioned database command wrappers backed by OCI images.
@@ -130,31 +130,31 @@ Client commands such as `psql`, `pg_dump`, and `pg_restore` run in short-lived c
 
 ## Runtime Model
 
-The supported runtimes are Docker and Apple Container. Adapter selection happens during installation: an unset `MISE_DB_ADAPTER` prefers Apple Container, then Docker; `MISE_DB_ADAPTER=docker|apple` selects explicitly. The resolved adapter is persisted in the install manifest. Wrappers reject a conflicting non-empty `MISE_DB_ADAPTER` and direct the user to force-reinstall.
+The supported runtimes are Docker and Apple Container. Adapter selection happens during installation: an unset `HAKO_ADAPTER` prefers Apple Container, then Docker; `HAKO_ADAPTER=docker|apple` selects explicitly. The resolved adapter is persisted in the install manifest. Wrappers reject a conflicting non-empty `HAKO_ADAPTER` and direct the user to force-reinstall.
 
 The shared network name is:
 
 ```text
-mise-db
+hako
 ```
 
 The persistent container name is deterministic:
 
 ```text
-mise-db-<tool>-<version-tag>-<instance>
+hako-<tool>-<version-tag>-<instance>
 ```
 
 Examples:
 
 ```text
-mise-db-postgres-18-4-global
-mise-db-postgres-18-4-myapp-0abc
+hako-postgres-18-4-global
+hako-postgres-18-4-myapp-0abc
 ```
 
 The data directory is:
 
 ```text
-${XDG_DATA_HOME:-$HOME/.local/share}/mise-db/<tool>/<version>/<instance>
+${XDG_DATA_HOME:-$HOME/.local/share}/hako/<tool>/<version>/<instance>
 ```
 
 Global mode uses:

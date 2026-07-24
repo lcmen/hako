@@ -20,7 +20,7 @@ readonly LIB_DIR="$(CDPATH='' cd -- "$(dirname -- "$script_path")" && pwd)"
 readonly INSTALL_DIR="$(CDPATH='' cd -- "$LIB_DIR/.." && pwd)"
 
 if [[ ! -f "$INSTALL_DIR/manifest" ]]; then
-  echo "mise-db manifest not found: $INSTALL_DIR/manifest" >&2
+  echo "hako manifest not found: $INSTALL_DIR/manifest" >&2
   exit 1
 fi
 
@@ -38,14 +38,14 @@ case "${ADAPTER:-}" in
     source "$LIB_DIR/docker.sh"
     ;;
   *)
-    echo "mise-db manifest has an unsupported adapter: ${ADAPTER:-missing}" >&2
+    echo "hako manifest has an unsupported adapter: ${ADAPTER:-missing}" >&2
     echo "Force-reinstall this tool to create a valid manifest." >&2
     exit 1
     ;;
 esac
 
 readonly CONTAINER="$(container_name)"
-readonly NETWORK="mise-db"
+readonly NETWORK="hako"
 
 ensure_data_dir() {
   local data
@@ -160,7 +160,7 @@ pg_ctl_wrapper() {
       reload_server
       ;;
     *)
-      echo "mise-db pg_ctl supports start, stop, status, restart, and reload." >&2
+      echo "hako pg_ctl supports start, stop, status, restart, and reload." >&2
       echo "Unsupported pg_ctl action: $action" >&2
       exit 2
       ;;
@@ -181,7 +181,7 @@ case "$command_name" in
     run_client "$command_name" "$@"
     ;;
   *)
-    echo "unsupported mise-db PostgreSQL command: $command_name" >&2
+    echo "unsupported hako PostgreSQL command: $command_name" >&2
     exit 2
     ;;
 esac

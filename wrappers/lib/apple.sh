@@ -262,14 +262,14 @@ ensure_network() {
 #   0 when Apple Container is usable; exits with an error otherwise.
 #######################################
 require_adapter() {
-  if [[ -n "${MISE_DB_ADAPTER:-}" && "$MISE_DB_ADAPTER" != "$ADAPTER" ]]; then
-    echo "mise-db install uses adapter $ADAPTER, but MISE_DB_ADAPTER requests $MISE_DB_ADAPTER." >&2
-    echo "Update mise config, then run mise install --force db:postgres@$VERSION to reinstall with the intended adapter." >&2
+  if [[ -n "${HAKO_ADAPTER:-}" && "$HAKO_ADAPTER" != "$ADAPTER" ]]; then
+    echo "hako install uses adapter $ADAPTER, but HAKO_ADAPTER requests $HAKO_ADAPTER." >&2
+    echo "Update mise config, then run mise install --force hako:postgres@$VERSION to reinstall with the intended adapter." >&2
     exit 1
   fi
 
   if ! command -v container >/dev/null 2>&1; then
-    echo "Apple Container is required for this mise-db installation." >&2
+    echo "Apple Container is required for this hako installation." >&2
     exit 1
   fi
   if ! container system status >/dev/null 2>&1; then
