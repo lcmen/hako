@@ -1,6 +1,7 @@
 local M = {}
 
 local json = require("json")
+local log = dofile(RUNTIME.pluginDirPath .. "/lib/log.lua")
 
 local CACHE_TTL_SECONDS = 24 * 60 * 60
 
@@ -17,22 +18,31 @@ end
 ---@return table value Cached or fresh value.
 function M.caching(name, callback)
     if not M.enabled() then
-        io.stderr:write("hako: registry cache disabled; fetching data from Docker Hub...\n")
+        log.debug("Registry cache is disabled")
+        log.info("Fetching registry data from Docker Hub")
         return callback()
     end
 
     local path = M.file(name)
-    if M.path_exists(path) and M.fresh(path) then
-        local value = M.read_json(path)
-        if value ~= nil then
-            io.stderr:write("hako: using cached registry data from " .. path .. "\n")
-            return value
+    if M.path_exists(path) then
+        if M.fresh(path) then
+            local value = M.read_json(path)
+            if value ~= nil then
+                log.debug("Using cached registry data from " .. path)
+                return value
+            end
+            log.debug("Ignoring invalid registry cache at " .. path)
+        else
+            log.debug("Registry cache expired at " .. path)
         end
+    else
+        log.debug("Registry cache is missing at " .. path)
     end
 
-    io.stderr:write("hako: registry cache missing/expired; fetching data from Docker Hub...\n")
+    log.info("Fetching registry data from Docker Hub")
     local value = callback()
     M.write_json(path, value)
+    log.debug("Wrote registry cache to " .. path)
     return value
 end
 
@@ -43,7 +53,7 @@ function M.dir()
     if base == nil or base == "" then
         local home = os.getenv("HOME")
         if home == nil or home == "" then
-            error("HOME is required when XDG_CACHE_HOME is not set")
+            log.error("HOME is required when XDG_CACHE_HOME is not set")
         end
         base = home .. "/.cache"
     end
@@ -54,7 +64,7 @@ end
 --- Returns whether registry caching is enabled.
 ---@return boolean enabled True when cache reads and writes are enabled.
 function M.enabled()
-    return os.getenv("HAKO_CACHE") ~= "0"
+    return os.getenv("CACHE") ~= "0"
 end
 
 --- Builds a cache file path.

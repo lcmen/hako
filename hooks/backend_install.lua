@@ -1,4 +1,5 @@
 local utils = dofile(RUNTIME.pluginDirPath .. "/lib/utils.lua")
+local log = dofile(RUNTIME.pluginDirPath .. "/lib/log.lua")
 
 local cmd = require("cmd")
 local file = require("file")
@@ -14,6 +15,7 @@ local function install_wrapper(ctx, tool)
     local wrapper_dest_file = file.join_path(lib_dest_dir, tool.wrapper)
     local wrapper_src_file = file.join_path(RUNTIME.pluginDirPath, "wrappers", tool.wrapper)
 
+    log.debug("Installing wrapper files into " .. ctx.install_path)
     cmd.exec("mkdir -p " .. utils.shell_quote(bin_dir))
     cmd.exec("cp -R " .. utils.shell_quotes({ lib_src_dir, ctx.install_path }))
     cmd.exec("cp " .. utils.shell_quotes({ wrapper_src_file, wrapper_dest_file }))
@@ -24,6 +26,7 @@ local function install_wrapper(ctx, tool)
         local cmd_file = file.join_path(bin_dir, bin)
         cmd.exec("ln -sf " .. utils.shell_quotes({ wrapper_dest_file, cmd_file }))
     end
+    log.debug("Installed " .. tostring(#tool.bins) .. " command wrappers")
 end
 
 --- Pulls the selected OCI image with the adapter chosen for this installation.
@@ -33,11 +36,7 @@ end
 local function pull_image(image, resolved_adapter)
     local pull_command
 
-    cmd.exec(
-        "printf '%s\n' "
-            .. utils.shell_quote("hako: pulling " .. image .. " with " .. resolved_adapter .. "...")
-            .. " >&2"
-    )
+    log.info("Pulling " .. image .. " with " .. resolved_adapter)
 
     if resolved_adapter == "apple" then
         pull_command = "container image pull " .. utils.shell_quote(image)
@@ -46,7 +45,7 @@ local function pull_image(image, resolved_adapter)
     end
 
     cmd.exec(pull_command .. " >&2")
-    cmd.exec("printf '%s\n' " .. utils.shell_quote("hako: pulled " .. image) .. " >&2")
+    log.info("Pulled " .. image)
 end
 
 --- Writes the wrapper manifest consumed by installed command symlinks.
@@ -64,6 +63,7 @@ local function write_manifest(ctx, image, isolated, resolved_adapter)
     manifest_file:write("ISOLATED=" .. (isolated and "true" or "false") .. "\n")
     manifest_file:write("ADAPTER=" .. resolved_adapter .. "\n")
     manifest_file:close()
+    log.debug("Wrote install manifest to " .. manifest)
 end
 
 function PLUGIN:BackendInstall(ctx)
@@ -72,6 +72,7 @@ function PLUGIN:BackendInstall(ctx)
     local isolated = utils.boolean_option(ctx, "isolated", false)
     local resolved_adapter = utils.resolve_adapter()
 
+    log.debug("Installing " .. ctx.tool .. " " .. ctx.version .. " from " .. image)
     cmd.exec("mkdir -p " .. utils.shell_quote(ctx.install_path))
     pull_image(image, resolved_adapter)
 

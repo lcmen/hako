@@ -1,8 +1,9 @@
 local M = {}
 
 local cache = dofile(RUNTIME.pluginDirPath .. "/lib/cache.lua")
-local utils = dofile(RUNTIME.pluginDirPath .. "/lib/utils.lua")
 local json = require("json")
+local log = dofile(RUNTIME.pluginDirPath .. "/lib/log.lua")
+local utils = dofile(RUNTIME.pluginDirPath .. "/lib/utils.lua")
 
 --- Decodes a Docker Hub tags response.
 ---@param body string Response body.
@@ -11,7 +12,7 @@ local json = require("json")
 local function decode_tags_response(body, url)
     local ok, response = pcall(json.decode, body)
     if not ok or type(response) ~= "table" then
-        error("failed to parse registry tags from " .. url)
+        log.error("failed to parse registry tags from " .. url)
     end
 
     return response
@@ -21,16 +22,16 @@ end
 ---@param url string URL to request.
 ---@return string body Response body.
 local function fetch(url)
-    url = utils.shell_quote(url)
-    local handle = io.popen("curl -fsSL --retry 2 --connect-timeout 10 --max-time 30 " .. url .. " 2>/dev/null")
+    local quoted_url = utils.shell_quote(url)
+    local handle = io.popen("curl -fsSL --retry 2 --connect-timeout 10 --max-time 30 " .. quoted_url .. " 2>/dev/null")
     if not handle then
-        error("failed to run curl while fetching registry tags")
+        log.error("failed to run curl while fetching registry tags")
     end
 
     local body = handle:read("*a")
     local ok = handle:close()
     if not ok then
-        error("failed to fetch registry tags from " .. url)
+        log.error("failed to fetch registry tags from " .. url)
     end
 
     return body
@@ -53,14 +54,17 @@ local function fetch_tags(repository, name_filter)
     end
 
     while url do
-        io.stderr:write("hako: fetching tag page " .. tostring(page) .. "...\n")
+        log.debug("Fetching Docker Hub tag page " .. tostring(page) .. ": " .. url)
         local body = fetch(url)
         local response = decode_tags_response(body, url)
+        local page_results = 0
         for _, tag in ipairs(response.results or {}) do
             if type(tag) == "table" then
                 table.insert(results, tag)
+                page_results = page_results + 1
             end
         end
+        log.debug("Received " .. tostring(page_results) .. " tags from Docker Hub page " .. tostring(page))
 
         if type(response.next) == "string" and response.next ~= "" then
             url = response.next
@@ -70,6 +74,7 @@ local function fetch_tags(repository, name_filter)
         page = page + 1
     end
 
+    log.debug("Fetched " .. tostring(#results) .. " Docker Hub tags across " .. tostring(page - 1) .. " pages")
     return results
 end
 
@@ -119,6 +124,8 @@ function M.list_versions(repository, tag_pattern, name_filter, min_major, cache_
     local architecture = utils.arch()
     local versions = {}
 
+    log.debug("Filtering registry tags for linux/" .. tostring(architecture or "any architecture"))
+
     for _, tag in ipairs(M.remote_tags(repository, name_filter, cache_name)) do
         local version = matching_version(tag, architecture, tag_pattern, min_major)
         if version ~= nil then
@@ -126,6 +133,7 @@ function M.list_versions(repository, tag_pattern, name_filter, min_major, cache_
         end
     end
 
+    log.debug("Matched " .. tostring(#versions) .. " supported versions")
     return versions
 end
 
