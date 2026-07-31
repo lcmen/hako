@@ -1,5 +1,7 @@
 local M = {}
 
+local log = dofile(RUNTIME.pluginDirPath .. "/lib/log.lua")
+
 --- Tool names implemented by this plugin.
 ---@type string[]
 M.supported_tools = { "postgres" }
@@ -122,11 +124,21 @@ function M.resolve_adapter()
     local requested = os.getenv("HAKO_ADAPTER")
 
     if requested ~= nil and requested ~= "" then
-        return adapter_available(requested) or error("hako adapter " .. requested .. " is not available")
+        log.debug("Checking requested " .. requested .. " adapter")
+        local resolved = adapter_available(requested)
+        if resolved == nil then
+            log.error("hako adapter " .. requested .. " is not available")
+        end
+        log.debug("Selected " .. resolved .. " adapter")
+        return resolved
     else
-        return adapter_available("apple")
-            or adapter_available("docker")
-            or error("hako requires a running Apple Container or Docker daemon")
+        log.debug("Detecting an available container adapter")
+        local resolved = adapter_available("apple") or adapter_available("docker")
+        if resolved == nil then
+            log.error("hako requires a running Apple Container or Docker daemon")
+        end
+        log.debug("Selected " .. resolved .. " adapter")
+        return resolved
     end
 end
 
@@ -200,7 +212,7 @@ function M.validate_tool(tool)
         end
     end
 
-    error("unsupported tool '" .. tostring(tool) .. "'; supported tools: " .. table.concat(M.supported_tools, ", "))
+    log.error("unsupported tool '" .. tostring(tool) .. "'; supported tools: " .. table.concat(M.supported_tools, ", "))
 end
 
 --- Converts a version string into a Docker-name-safe tag segment.

@@ -19,16 +19,24 @@ done
 readonly LIB_DIR="$(CDPATH='' cd -- "$(dirname -- "$script_path")" && pwd)"
 readonly INSTALL_DIR="$(CDPATH='' cd -- "$LIB_DIR/.." && pwd)"
 
+source "$LIB_DIR/log.sh"
+
 if [[ ! -f "$INSTALL_DIR/manifest" ]]; then
-  echo "hako manifest not found: $INSTALL_DIR/manifest" >&2
+  log_error "Hako manifest not found: $INSTALL_DIR/manifest"
   exit 1
 fi
 
 source "$INSTALL_DIR/manifest"
 source "$LIB_DIR/context.sh"
 
-: "${PGUSER:?PGUSER is required}"
-: "${PGPASS:?PGPASS is required}"
+if [[ -z "${PGUSER:-}" ]]; then
+  log_error "PGUSER is required"
+  exit 1
+fi
+if [[ -z "${PGPASS:-}" ]]; then
+  log_error "PGPASS is required"
+  exit 1
+fi
 
 case "${ADAPTER:-}" in
   apple)
@@ -38,8 +46,8 @@ case "${ADAPTER:-}" in
     source "$LIB_DIR/docker.sh"
     ;;
   *)
-    echo "hako manifest has an unsupported adapter: ${ADAPTER:-missing}" >&2
-    echo "Force-reinstall this tool to create a valid manifest." >&2
+    log_error "Hako manifest has an unsupported adapter: ${ADAPTER:-missing}"
+    log_error "Force-reinstall this tool to create a valid manifest"
     exit 1
     ;;
 esac
@@ -50,10 +58,12 @@ readonly NETWORK="hako"
 ensure_data_dir() {
   local data
   data="$(data_dir)"
+  log_debug "Ensuring PostgreSQL data directory exists: $data"
   mkdir -p "$data"
 }
 
 create_server_container() {
+  log_debug "Creating PostgreSQL container $CONTAINER from $IMAGE"
   ensure_image "$IMAGE"
   ensure_network "$NETWORK"
   ensure_data_dir
@@ -73,22 +83,28 @@ start_server() {
   require_adapter
 
   if ! container_exists "$CONTAINER"; then
+    log_debug "PostgreSQL container does not exist: $CONTAINER"
     create_server_container
+  else
+    log_debug "PostgreSQL container already exists: $CONTAINER"
   fi
 
   if ! container_running "$CONTAINER"; then
+    log_debug "Starting PostgreSQL container: $CONTAINER"
     container_start "$CONTAINER" >/dev/null
+  else
+    log_debug "PostgreSQL container is already running: $CONTAINER"
   fi
 
   container_ready "$CONTAINER" 60 "$PGUSER"
-  printf 'PostgreSQL %s running as %s on %s network %s\n' "$VERSION" "$CONTAINER" "$ADAPTER" "$NETWORK"
+  log_status "PostgreSQL $VERSION is running as $CONTAINER on $ADAPTER network $NETWORK"
 }
 
 stop_server() {
   require_adapter
 
   if ! container_exists "$CONTAINER"; then
-    printf 'PostgreSQL %s is not running as %s on %s network %s\n' "$VERSION" "$CONTAINER" "$ADAPTER" "$NETWORK"
+    log_status "PostgreSQL $VERSION is not running as $CONTAINER on $ADAPTER network $NETWORK"
     return 3
   fi
 
@@ -97,6 +113,7 @@ stop_server() {
   fi
 
   container_delete "$CONTAINER" >/dev/null
+  log_status "PostgreSQL $VERSION stopped and removed container $CONTAINER"
 }
 
 status_server() {
@@ -108,10 +125,11 @@ reload_server() {
   require_adapter
 
   if ! container_running "$CONTAINER"; then
-    echo "PostgreSQL container is not running: $CONTAINER" >&2
+    log_error "PostgreSQL container is not running: $CONTAINER"
     return 3
   fi
 
+  log_debug "Reloading PostgreSQL configuration in $CONTAINER"
   container_exec "$CONTAINER" pg_ctl reload -D "${PGDATA:-/var/lib/postgresql/data/pgdata}"
 }
 
@@ -122,6 +140,7 @@ run_client() {
   require_adapter
   ensure_image "$IMAGE"
   ensure_network "$NETWORK"
+  log_debug "Running PostgreSQL client $client from $IMAGE"
 
   case "${1:-}" in
     --help|--version|-V)
@@ -160,8 +179,8 @@ pg_ctl_wrapper() {
       reload_server
       ;;
     *)
-      echo "hako pg_ctl supports start, stop, status, restart, and reload." >&2
-      echo "Unsupported pg_ctl action: $action" >&2
+      log_error "Hako pg_ctl supports start, stop, status, restart, and reload"
+      log_error "Unsupported pg_ctl action: $action"
       exit 2
       ;;
   esac
@@ -181,7 +200,7 @@ case "$command_name" in
     run_client "$command_name" "$@"
     ;;
   *)
-    echo "unsupported hako PostgreSQL command: $command_name" >&2
+    log_error "Unsupported hako PostgreSQL command: $command_name"
     exit 2
     ;;
 esac

@@ -14,6 +14,7 @@ container_create() {
   local health_cmd="${1:?health command is required}"
   shift
 
+  log_debug "Creating Docker container"
   docker create \
     --health-cmd "$health_cmd" \
     --health-interval 1s \
@@ -30,7 +31,9 @@ container_create() {
 #   The Docker remove command's exit status.
 #######################################
 container_delete() {
-  docker rm "${1:?container name is required}"
+  local container="${1:?container name is required}"
+  log_debug "Deleting Docker container: $container"
+  docker rm "$container"
 }
 
 #######################################
@@ -45,6 +48,7 @@ container_exec() {
   local container="${1:?container name is required}"
   shift
 
+  log_debug "Executing a command in Docker container: $container"
   docker exec "$container" "$@"
 }
 
@@ -111,29 +115,31 @@ container_ready() {
   local timeout="${2:-60}"
   local deadline status
   deadline=$((SECONDS + timeout))
+  log_debug "Waiting up to ${timeout} seconds for Docker healthcheck in $container"
 
   while true; do
     status="$(container_health "$container" 2>/dev/null || true)"
 
     case "$status" in
       healthy)
+        log_debug "Docker container is healthy: $container"
         return 0
         ;;
       unhealthy)
         docker logs "$container" >&2 || true
-        echo "Container healthcheck failed: $container" >&2
+        log_error "Container healthcheck failed: $container"
         exit 1
         ;;
       none)
-        echo "Container does not have a healthcheck: $container" >&2
-        echo "Remove and recreate the container to add one." >&2
+        log_error "Container does not have a healthcheck: $container"
+        log_error "Remove and recreate the container to add one"
         exit 1
         ;;
     esac
 
     if (( SECONDS >= deadline )); then
       docker logs "$container" >&2 || true
-      echo "Container did not become healthy within ${timeout} seconds: $container" >&2
+      log_error "Container did not become healthy within ${timeout} seconds: $container"
       exit 1
     fi
 
@@ -149,6 +155,7 @@ container_ready() {
 #   The Docker run command's exit status.
 #######################################
 container_run() {
+  log_debug "Running a short-lived Docker container"
   docker run "$@"
 }
 
@@ -172,7 +179,9 @@ container_running() {
 #   The Docker start command's exit status.
 #######################################
 container_start() {
-  docker start "${1:?container name is required}"
+  local container="${1:?container name is required}"
+  log_debug "Starting Docker container: $container"
+  docker start "$container"
 }
 
 #######################################
@@ -188,21 +197,21 @@ container_status() {
   local label="${2:-Container}"
 
   if ! container_exists "$container"; then
-    echo "$label container does not exist: $container"
+    log_status "$label container does not exist: $container"
     return 3
   fi
 
   if ! container_running "$container"; then
-    echo "$label container is stopped: $container"
+    log_status "$label container is stopped: $container"
     return 3
   fi
 
   if [[ "$(container_health "$container")" == "healthy" ]]; then
-    echo "$label container is running: $container"
+    log_status "$label container is running: $container"
     return 0
   fi
 
-  echo "$label container is running but not healthy: $container"
+  log_status "$label container is running but not healthy: $container"
   return 3
 }
 
@@ -214,7 +223,9 @@ container_status() {
 #   The Docker stop command's exit status.
 #######################################
 container_stop() {
-  docker stop "${1:?container name is required}"
+  local container="${1:?container name is required}"
+  log_debug "Stopping Docker container: $container"
+  docker stop "$container"
 }
 
 #######################################
@@ -241,9 +252,10 @@ container_tty_args() {
 #######################################
 ensure_image() {
   local image="${1:?Docker image is required}"
+  log_debug "Checking Docker image: $image"
   if ! docker image inspect "$image" >/dev/null 2>&1; then
-    echo "Docker image is missing: $image" >&2
-    echo "Run mise install to pull it again." >&2
+    log_error "Docker image is missing: $image"
+    log_error "Run mise install to pull it again"
     exit 1
   fi
 }
@@ -258,7 +270,10 @@ ensure_image() {
 ensure_network() {
   local network="${1:?network name is required}"
   if ! docker network inspect "$network" >/dev/null 2>&1; then
+    log_debug "Creating Docker network: $network"
     docker network create "$network" >/dev/null
+  else
+    log_debug "Docker network already exists: $network"
   fi
 }
 
@@ -268,18 +283,20 @@ ensure_network() {
 #   0 when Docker is usable; exits with an error otherwise.
 #######################################
 require_adapter() {
+  log_debug "Validating Docker adapter"
   if [[ -n "${HAKO_ADAPTER:-}" && "$HAKO_ADAPTER" != "$ADAPTER" ]]; then
-    echo "hako install uses adapter $ADAPTER, but HAKO_ADAPTER requests $HAKO_ADAPTER." >&2
-    echo "Update mise config, then run mise install --force hako:postgres@$VERSION to reinstall with the intended adapter." >&2
+    log_error "Hako install uses adapter $ADAPTER, but HAKO_ADAPTER requests $HAKO_ADAPTER"
+    log_error "Update mise config, then run mise install --force hako:postgres@$VERSION to reinstall with the intended adapter"
     exit 1
   fi
 
   if ! command -v docker >/dev/null 2>&1; then
-    echo "Docker is required for this hako installation." >&2
+    log_error "Docker is required for this hako installation"
     exit 1
   fi
   if ! docker info >/dev/null 2>&1; then
-    echo "Docker is installed but the daemon is not available." >&2
+    log_error "Docker is installed but the daemon is not available"
     exit 1
   fi
+  log_debug "Docker adapter is available"
 }

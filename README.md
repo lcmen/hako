@@ -47,7 +47,15 @@ Version discovery is cached for 24 hours in:
 ${XDG_CACHE_HOME:-$HOME/.cache}/hako/postgres.json
 ```
 
-Set `HAKO_CACHE=0` to bypass the registry cache for a single run.
+Set `CACHE=0` to bypass the registry cache for a single run.
+
+Set `DEBUG=1` to print detailed hako diagnostics for a single command:
+
+```bash
+DEBUG=1 mise ls-remote hako:postgres
+```
+
+Debug output includes cache decisions, individual Docker Hub tag pages, adapter selection, image installation, and container lifecycle operations. Hako-owned messages use the `[hako]` prefix. Interactive debug messages are cyan, warnings are orange, and errors are red; redirected output does not contain terminal color codes.
 
 ## Use database
 
