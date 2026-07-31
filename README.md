@@ -2,16 +2,16 @@
 
 `hako` is a [mise](https://mise.jdx.dev/) backend plugin that provides a local database engine through containers.
 
-Install the plugin as `hako`, add a database to `mise.toml`, then start, stop, and use the database with familiar binaries such as `pg_ctl`, `postgres`, `psql`, `pg_dump`, and `pg_restore`. Those binaries are wrappers around a versioned PostgreSQL OCI image, so they feel like native tools while the database engine runs in a managed container.
+Install the plugin as `hako`, add a database to `mise.toml`, then start, stop, and use it through familiar PostgreSQL or Redis commands. The installed binaries are wrappers around versioned OCI images, so they feel like native tools while the database engine runs in a managed container.
 
-Current status: PostgreSQL on Docker and Apple Container.
+Current status: PostgreSQL and Redis on Docker and Apple Container.
 
 ## Requirements
 
 - [mise](https://mise.jdx.dev/)
 - One usable runtime: Docker with a running daemon, or Apple Container with a running service
 - Apple Container requires Apple silicon and macOS 26 or later
-- Network access during `mise install` so the selected runtime can pull the PostgreSQL image
+- Network access during `mise install` so the selected runtime can pull the database image
 
 ## Install The Plugin
 
@@ -33,10 +33,17 @@ Add PostgreSQL to `mise.toml`:
 mise use hako:postgres@18.4
 ```
 
+Or add Redis:
+
+```bash
+mise use hako:redis@7.4
+```
+
 During install, `hako` pulls:
 
 ```text
 postgres:18.4-alpine
+redis:7.4-alpine
 ```
 
 and installs wrapper commands into the mise tool installation. The selected runtime adapter is recorded in that installation.
@@ -44,7 +51,7 @@ and installs wrapper commands into the mise tool installation. The selected runt
 Version discovery is cached for 24 hours in:
 
 ```text
-${XDG_CACHE_HOME:-$HOME/.cache}/hako/postgres.json
+${XDG_CACHE_HOME:-$HOME/.cache}/hako/<service>.json
 ```
 
 Set `CACHE=0` to bypass the registry cache for a single run.
@@ -67,6 +74,16 @@ psql
 pg_ctl stop
 ```
 
+Redis installs only `redis-server` and `redis-cli`:
+
+```bash
+redis-server start
+redis-cli ping
+redis-server stop
+```
+
+See [PostgreSQL](docs/services/postgresql.md) and [Redis](docs/services/redis.md) for service-specific lifecycle, persistence, versions, environment, and limitations.
+
 ## Container Runtime
 
 During `mise install`, hako prefers a usable Apple Container service, then a usable Docker daemon. Set `HAKO_ADAPTER` in mise config before installing to choose explicitly:
@@ -87,7 +104,7 @@ container system start
 Changing `HAKO_ADAPTER` after installation is rejected so wrappers never mix runtimes. Force-reinstall with the intended adapter instead:
 
 ```bash
-mise install --force hako:postgres@18.4
+mise install --force hako:<service>@<version>
 ```
 
 ## Isolation
@@ -122,6 +139,12 @@ Apple Container resolves named containers as `<container-name>.<domain>`. `hako`
 PGHOST=hako-postgres-18-4-myapp-0abc.container
 ```
 
+Redis activation exports a URL with the same deterministic naming:
+
+```text
+REDIS_URL=redis://hako-redis-7-4-myapp-0abc.container:6379
+```
+
 Rails can then use the activated environment:
 
 ```yaml
@@ -139,10 +162,10 @@ DNS must resolve the generated hostname to an address reachable from the host. A
 Database files are stored outside the mise install directory:
 
 ```text
-${XDG_DATA_HOME:-$HOME/.local/share}/hako/postgres/<version>/<instance>
+${XDG_DATA_HOME:-$HOME/.local/share}/hako/<service>/<version>/<instance>
 ```
 
-Stopping PostgreSQL removes the container but keeps the data directory.
+Stopping a service removes its container but keeps the data directory. Redis mounts this directory at `/data` and enables AOF with `appendfsync everysec`.
 
 Uninstalling the mise tool does not delete database data.
 
@@ -154,15 +177,15 @@ Each runtime uses one shared network in its own runtime namespace:
 hako
 ```
 
-`pg_ctl start` creates a persistent container and waits until PostgreSQL is ready before returning. Docker uses a container healthcheck; Apple Container polls `pg_isready` inside the managed container.
+Starting a service creates a persistent container and waits until it is ready before returning. Docker uses a service-specific container healthcheck. Apple Container polls `pg_isready` for PostgreSQL and `redis-cli ping` for Redis.
 
 Client commands run in short-lived containers on the shared network. Docker clients connect to the managed container by name; Apple Container clients connect to its IPv4 address on that network.
 
-If the selected runtime removes the image later, wrappers fail with a clear message. Run `mise install --force hako:postgres@18.4` to pull the image back.
+If the selected runtime removes the image later, wrappers fail with a clear message. Force-reinstall the selected hako tool to pull the image back.
 
 ## Current Limitations
 
-- PostgreSQL is the only implemented database.
-- MySQL and Valkey are planned but not available yet.
+- MySQL is planned but not available yet.
+- Redis authentication, TLS, host-port publishing, Sentinel, clustering, modules, and custom configuration are not implemented.
 - Automatic host DNS setup is not implemented yet.
 - Images are pulled by tag, not pinned by digest yet.

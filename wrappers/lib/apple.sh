@@ -108,31 +108,35 @@ container_logs() {
 }
 
 #######################################
-# Waits until PostgreSQL accepts connections inside the managed container.
+# Waits until a readiness command succeeds inside the managed container.
 # Arguments:
 #   $1: Container name.
 #   $2: Timeout in seconds. Defaults to 60.
-#   $3: PostgreSQL user. Defaults to postgres.
+#   Remaining arguments: Readiness command and arguments.
 # Returns:
-#   0 when PostgreSQL is ready; exits with an error otherwise.
+#   0 when the service is ready; exits with an error otherwise.
 #######################################
 container_ready() {
   local managed_container="${1:?container name is required}"
   local timeout="${2:-60}"
-  local user="${3:-postgres}"
+  shift 2
+  (( $# > 0 )) || {
+    log_error "Container readiness command is required: $managed_container"
+    exit 1
+  }
   local deadline
   deadline=$((SECONDS + timeout))
-  log_debug "Waiting up to ${timeout} seconds for PostgreSQL readiness in $managed_container"
+  log_debug "Waiting up to ${timeout} seconds for service readiness in $managed_container"
 
   while true; do
-    if container_running "$managed_container" && container exec "$managed_container" pg_isready -U "$user" >/dev/null 2>&1; then
-      log_debug "PostgreSQL is ready in $managed_container"
+    if container_running "$managed_container" && container exec "$managed_container" "$@" >/dev/null 2>&1; then
+      log_debug "Service is ready in $managed_container"
       return 0
     fi
 
     if (( SECONDS >= deadline )); then
       container logs "$managed_container" >&2 || true
-      log_error "PostgreSQL did not become ready within ${timeout} seconds: $managed_container"
+      log_error "Service did not become ready within ${timeout} seconds: $managed_container"
       exit 1
     fi
 
@@ -177,18 +181,23 @@ container_start() {
 }
 
 #######################################
-# Prints a container's status and returns success only when PostgreSQL is ready.
+# Prints a container's status and returns success only when its readiness command succeeds.
 # Arguments:
 #   $1: Container name.
 #   $2: Display label. Defaults to "Container".
-#   $3: PostgreSQL user. Defaults to postgres.
+#   Remaining arguments: Readiness command and arguments.
 # Returns:
-#   0 when the container is running and PostgreSQL is ready, 3 otherwise.
+#   0 when the container is running and ready, 3 otherwise.
 #######################################
 container_status() {
   local managed_container="${1:?container name is required}"
   local label="${2:-Container}"
-  local user="${3:-postgres}"
+  shift 2
+
+  if (( $# == 0 )); then
+    log_error "Container readiness command is required: $managed_container"
+    return 1
+  fi
 
   if ! container_exists "$managed_container"; then
     log_status "$label container does not exist: $managed_container"
@@ -200,12 +209,12 @@ container_status() {
     return 3
   fi
 
-  if container exec "$managed_container" pg_isready -U "$user" >/dev/null 2>&1; then
+  if container exec "$managed_container" "$@" >/dev/null 2>&1; then
     log_status "$label container is running: $managed_container"
     return 0
   fi
 
-  log_status "$label container is running but PostgreSQL is not ready: $managed_container"
+  log_status "$label container is running but not ready: $managed_container"
   return 3
 }
 
@@ -280,7 +289,7 @@ require_adapter() {
   log_debug "Validating Apple Container adapter"
   if [[ -n "${HAKO_ADAPTER:-}" && "$HAKO_ADAPTER" != "$ADAPTER" ]]; then
     log_error "Hako install uses adapter $ADAPTER, but HAKO_ADAPTER requests $HAKO_ADAPTER"
-    log_error "Update mise config, then run mise install --force hako:postgres@$VERSION to reinstall with the intended adapter"
+    log_error "Update mise config, then run mise install --force hako:$TOOL@$VERSION to reinstall with the intended adapter"
     exit 1
   fi
 

@@ -106,7 +106,7 @@ adapter_pull() {
 assert() {
   local expected="${1:?expected line is required}"
 
-  if ! grep -Fx "$expected" >/dev/null; then
+  if ! sed 's/\r$//' | grep -Fx "$expected" >/dev/null; then
     echo "expected output to include: $expected" >&2
     return 1
   fi
@@ -122,7 +122,7 @@ assert() {
 refute() {
   local unexpected="${1:?unexpected line is required}"
 
-  if grep -Fx "$unexpected" >/dev/null; then
+  if sed 's/\r$//' | grep -Fx "$unexpected" >/dev/null; then
     echo "expected output to exclude: $unexpected" >&2
     return 1
   fi

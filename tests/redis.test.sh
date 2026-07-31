@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+
+# shellcheck disable=SC1091,SC2155
+set -euo pipefail
+
+ADAPTERS=(apple docker)
+INSTALL_DIRS=()
+ROOT_DIR="$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+
+source "$ROOT_DIR/tests/helpers.sh"
+
+cleanup() {
+  local adapter="${1}"
+  local install_dir
+  for install_dir in "${INSTALL_DIRS[@]:-}"; do
+    run "$adapter" "$install_dir" redis-server stop >/dev/null 2>&1 || true
+  done
+}
+
+setup() {
+  local adapter="${1}"
+  local install_dir="$(install_tool redis 7.4 true "$adapter")"
+
+  INSTALL_DIRS+=("$install_dir")
+  install_wrapper "$ROOT_DIR" "$install_dir" redis redis-server redis-cli
+
+  [[ -x "$install_dir/bin/redis-server" ]]
+  [[ -x "$install_dir/bin/redis-cli" ]]
+}
+
+versions_test() {
+  local adapter="${1}"
+  local cache_dir output
+
+  cache_dir="$(create_cache "$ROOT_DIR" redis)"
+  output="$(HAKO_ADAPTER="$adapter" XDG_CACHE_HOME="$cache_dir" mise ls-remote hako:redis)"
+
+  assert 6 <<<"$output"
+  assert 7 <<<"$output"
+  refute 5 <<<"$output"
+  refute 8.0.1-alpine3.21 <<<"$output"
+  refute 9 <<<"$output"
+}
+
+service_test() {
+  local adapter="${1}"
+  local install_dir="${INSTALL_DIRS[$((${#INSTALL_DIRS[@]} - 1))]}"
+
+  run "$adapter" "$install_dir" redis-cli --help >/dev/null
+  run "$adapter" "$install_dir" redis-cli --version | grep -F 'redis-cli' >/dev/null
+
+  run "$adapter" "$install_dir" redis-server start
+  run "$adapter" "$install_dir" redis-server status
+  assert PONG < <(run "$adapter" "$install_dir" redis-cli --raw ping)
+  assert OK < <(run "$adapter" "$install_dir" redis-cli --raw set hako:persistence survived)
+  assert survived < <(run "$adapter" "$install_dir" redis-cli --raw get hako:persistence)
+}
+
+for adapter in "${ADAPTERS[@]}"; do
+  if ! adapter_available "$adapter"; then
+    echo "===================================================================="
+    echo "= Skipping Redis tests for ${adapter} adapter - not available"
+    echo "===================================================================="
+    continue
+  else
+    echo "===================================================================="
+    echo "= Running Redis tests with ${adapter} adapter"
+    echo "===================================================================="
+  fi
+
+  trap 'cleanup "$adapter"' EXIT
+
+  setup "$adapter"
+  versions_test "$adapter"
+  service_test "$adapter"
+  cleanup "$adapter"
+  trap - EXIT
+done

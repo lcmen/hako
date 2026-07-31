@@ -38,7 +38,7 @@ Registry results are cached for 24 hours:
 ${XDG_CACHE_HOME:-$HOME/.cache}/hako/postgres.json
 ```
 
-Set `HAKO_CACHE=0` to bypass the cache.
+Set `CACHE=0` to bypass the cache.
 
 Installation pulls:
 

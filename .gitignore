@@ -15,7 +15,7 @@ src/
 # Extracted upstream source/package directories
 postgresql-*/
 mysql-*/
-valkey-*/
+redis-*/
 
 # Local install/package staging
 prefix/

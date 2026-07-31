@@ -107,12 +107,14 @@ container_logs() {
 # Arguments:
 #   $1: Container name.
 #   $2: Timeout in seconds. Defaults to 60.
+#   Remaining arguments: Readiness command, used by polling adapters.
 # Returns:
 #   0 when the container is healthy; exits with an error otherwise.
 #######################################
 container_ready() {
   local container="${1:?container name is required}"
   local timeout="${2:-60}"
+  shift 2 || true
   local deadline status
   deadline=$((SECONDS + timeout))
   log_debug "Waiting up to ${timeout} seconds for Docker healthcheck in $container"
@@ -189,12 +191,14 @@ container_start() {
 # Arguments:
 #   $1: Container name.
 #   $2: Display label. Defaults to "Container".
+#   Remaining arguments: Readiness command, used by polling adapters.
 # Returns:
 #   0 when the container is running and healthy, 3 otherwise.
 #######################################
 container_status() {
   local container="${1:?container name is required}"
   local label="${2:-Container}"
+  shift 2 || true
 
   if ! container_exists "$container"; then
     log_status "$label container does not exist: $container"
@@ -286,7 +290,7 @@ require_adapter() {
   log_debug "Validating Docker adapter"
   if [[ -n "${HAKO_ADAPTER:-}" && "$HAKO_ADAPTER" != "$ADAPTER" ]]; then
     log_error "Hako install uses adapter $ADAPTER, but HAKO_ADAPTER requests $HAKO_ADAPTER"
-    log_error "Update mise config, then run mise install --force hako:postgres@$VERSION to reinstall with the intended adapter"
+    log_error "Update mise config, then run mise install --force hako:$TOOL@$VERSION to reinstall with the intended adapter"
     exit 1
   fi
 

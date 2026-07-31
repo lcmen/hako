@@ -4,7 +4,7 @@ local log = dofile(RUNTIME.pluginDirPath .. "/lib/log.lua")
 
 --- Tool names implemented by this plugin.
 ---@type string[]
-M.supported_tools = { "postgres" }
+M.supported_tools = { "postgres", "redis" }
 
 --- Checks whether a runtime adapter is available.
 ---@param adapter string Runtime adapter, either "apple" or "docker".

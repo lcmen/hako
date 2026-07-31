@@ -2,7 +2,7 @@
 
 Hako is a [mise](https://mise.jdx.dev/) backend plugin. It installs versioned database command wrappers backed by OCI images.
 
-PostgreSQL is the only implemented service. MySQL and Valkey are planned.
+PostgreSQL and Redis are implemented services. MySQL is planned.
 
 Start with the document that matches your work:
 
@@ -11,6 +11,7 @@ Start with the document that matches your work:
 - [Code conventions](docs/conventions.md): Lua and Bash style used in this repository.
 - [Testing](docs/testing.md): how to run and write tests.
 - [PostgreSQL](docs/services/postgresql.md): PostgreSQL-specific behavior.
+- [Redis](docs/services/redis.md): Redis-specific behavior.
 
 Keep these project rules:
 
@@ -18,7 +19,7 @@ Keep these project rules:
 - Pull images during installation, not during normal wrapper execution.
 - Do not delete persistent database data during stop or uninstall.
 - Copy wrappers into the mise install. Do not link installed commands back to this checkout.
-- Public service names are `postgres`, `mysql`, and `valkey`.
+- Public service names are `postgres`, `redis`, and `mysql`.
 
 Before submitting a change, run:
 
