@@ -96,7 +96,7 @@ start_server() {
     log_debug "PostgreSQL container is already running: $CONTAINER"
   fi
 
-  container_ready "$CONTAINER" 60 "$PGUSER"
+  container_ready "$CONTAINER" 60 pg_isready -U "$PGUSER"
   log_status "PostgreSQL $VERSION is running as $CONTAINER on $ADAPTER network $NETWORK"
 }
 
@@ -118,7 +118,7 @@ stop_server() {
 
 status_server() {
   require_adapter
-  container_status "$CONTAINER" "PostgreSQL" "$PGUSER"
+  container_status "$CONTAINER" "PostgreSQL" pg_isready -U "$PGUSER"
 }
 
 reload_server() {

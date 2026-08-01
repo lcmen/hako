@@ -16,7 +16,7 @@ Link the local plugin so mise can run its backend hooks:
 mise plugin link hako /path/to/hako
 ```
 
-Runtime tests need Docker, Apple Container, or both. The runtime service must be running. A missing `postgres:18.4-alpine` image is pulled before the test.
+Runtime tests need Docker, Apple Container, or both. The runtime service must be running. Missing test images are pulled before the test.
 
 The smoke test skips a runtime that is not available. Both runtimes are needed for complete adapter coverage, but the script does not require both to exit successfully.
 
@@ -34,11 +34,17 @@ Run the PostgreSQL smoke test:
 tests/postgres.test.sh
 ```
 
+Run the Redis smoke test:
+
+```bash
+tests/redis.test.sh
+```
+
 For a quick check of shell files:
 
 ```bash
-bash -n wrappers/postgres wrappers/lib/*.sh tests/*.sh
-shellcheck wrappers/postgres wrappers/lib/*.sh tests/*.sh
+bash -n wrappers/postgres wrappers/redis wrappers/lib/*.sh tests/*.sh
+shellcheck wrappers/postgres wrappers/redis wrappers/lib/*.sh tests/*.sh
 ```
 
 `mise run check` is the main command because it also checks Lua files.
@@ -56,6 +62,8 @@ For each available adapter, `tests/postgres.test.sh`:
 7. Stops and removes the managed container.
 
 `tests/helpers.sh` provides setup, adapter, assertion, and command helpers. `run` sets `HAKO_ADAPTER`, `MISE_PROJECT_ROOT`, `PATH`, and `XDG_DATA_HOME` for the temporary install.
+
+The Redis smoke test uses the same adapter loop. It checks major, minor, and patch version discovery; command installation; startup and readiness; client help/version without a server; and key access.
 
 ## Write or extend a test
 

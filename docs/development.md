@@ -33,7 +33,7 @@ Installed wrappers must work without the plugin checkout. Test the copied instal
 
 ## Add a service
 
-Public service names are `postgres`, `mysql`, and `valkey`. Valkey is the Redis-compatible service planned by this project; do not add `redis` as another public tool name.
+Public service names are `postgres`, `redis`, and `mysql`. PostgreSQL and Redis are implemented; MySQL is planned.
 
 To add a service:
 
@@ -61,10 +61,11 @@ Use automatic fixes when needed:
 mise run fix
 ```
 
-Run the smoke test for each affected service. PostgreSQL uses:
+Run the smoke test for each affected service:
 
 ```bash
 tests/postgres.test.sh
+tests/redis.test.sh
 ```
 
 Check the output to confirm that every required adapter ran. The script skips adapters that are not available.

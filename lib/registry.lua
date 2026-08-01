@@ -109,7 +109,6 @@ local function matching_version(tag, architecture, tag_pattern, min_major)
     if min_major ~= nil and (major == nil or major < min_major) then
         return nil
     end
-
     return version
 end
 
