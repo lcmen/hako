@@ -1,7 +1,9 @@
+[settings]
+lockfile = true
+
 [tools]
 "aqua:Kampfkarren/selene" = "latest"
 hk = "latest"
-pkl = "latest"
 shellcheck = "latest"
 stylua = "latest"
 
