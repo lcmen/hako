@@ -155,7 +155,26 @@ development:
   password: <%= ENV.fetch("PGPASS", "postgres") %>
 ```
 
-DNS must resolve the generated hostname to an address reachable from the host. Apple Container's DNS domain is managed with `container system dns`; Docker users need a DNS service such as [`devdns`](https://github.com/lcmen/devdns), and Docker Desktop for macOS may need additional networking support for direct container IP access.
+For Docker, start [`devdns`](https://github.com/lcmen/devdns) with the `hako` domain:
+
+```bash
+HOSTMACHINE_IP="$(docker network inspect hako --format '{{(index .IPAM.Config 0).Gateway}}')"
+
+docker run -d \
+  --name devdns \
+  --restart unless-stopped \
+  --network hako \
+  -p 127.0.0.1:53:53/udp \
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  -e DNS_DOMAIN=hako \
+  -e NETWORK=hako \
+  -e HOSTMACHINE_IP="$HOSTMACHINE_IP" \
+  lmendelowski/devdns
+```
+
+The `hako` network must already exist; starting a Hako-managed database creates it. `HOSTMACHINE_IP` reads that network's host-side gateway.
+
+Follow devdns instructions to setup resolvers: https://github.com/lcmen/devdns#host-machine--containers
 
 ## Data Storage
 
