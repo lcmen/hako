@@ -28,6 +28,12 @@ Run all configured static checks:
 mise run check
 ```
 
+Run all smoke tests:
+
+```bash
+tests/run.sh
+```
+
 Run the PostgreSQL smoke test:
 
 ```bash
