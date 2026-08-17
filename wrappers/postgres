@@ -25,7 +25,7 @@ source "$LIB_DIR/log.sh"
 
 readonly VERSION="${_HAKO_POSTGRES_VERSION:-}"
 readonly IMAGE="${_HAKO_POSTGRES_IMAGE:-}"
-readonly ISOLATED="${_HAKO_POSTGRES_ISOLATED:-}"
+readonly NAMESPACE="${_HAKO_POSTGRES_NAMESPACE:-}"
 readonly ADAPTER="${HAKO_ADAPTER:-}"
 
 if [[ -z "$VERSION" ]]; then
@@ -35,11 +35,6 @@ if [[ -z "$VERSION" ]]; then
 fi
 if [[ -z "$IMAGE" ]]; then
   log_error "_HAKO_POSTGRES_IMAGE is required"
-  log_error "Run this command in an activated mise environment"
-  exit 1
-fi
-if [[ -z "$ISOLATED" ]]; then
-  log_error "_HAKO_POSTGRES_ISOLATED is required"
   log_error "Run this command in an activated mise environment"
   exit 1
 fi
@@ -68,12 +63,12 @@ case "$ADAPTER" in
     ;;
 esac
 
-readonly CONTAINER="$(container_name)"
+readonly CONTAINER="$(container_name "$NAMESPACE")"
 readonly NETWORK="hako"
 
 ensure_data_dir() {
   local data
-  data="$(data_dir)"
+  data="$(data_dir "$NAMESPACE")"
   log_debug "Ensuring PostgreSQL data directory exists: $data"
   mkdir -p "$data"
 }
@@ -87,7 +82,7 @@ create_server_container() {
   container_create "pg_isready -U $PGUSER" \
     --name "$CONTAINER" \
     --network "$NETWORK" \
-    --volume "$(data_dir):/var/lib/postgresql/data" \
+    --volume "$(data_dir "$NAMESPACE"):/var/lib/postgresql/data" \
     --env POSTGRES_DB="$PGUSER" \
     --env POSTGRES_USER="$PGUSER" \
     --env POSTGRES_PASSWORD="$PGPASS" \

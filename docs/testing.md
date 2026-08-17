@@ -67,7 +67,7 @@ Before checking adapters, `tests/postgres.test.sh` uses `tests/fixtures/postgres
 5. Runs a query and a dump-and-restore round trip.
 6. Stops and removes the managed container.
 
-`tests/helpers.sh` provides setup, adapter, assertion, and command helpers. Each service setup exports its service-specific version, image, and isolation variables. `run` sets `HAKO_ADAPTER`, `MISE_PROJECT_ROOT`, `PATH`, and `XDG_DATA_HOME` for the temporary install.
+`tests/helpers.sh` provides setup, adapter, assertion, and command helpers. Each service setup exports its service-specific version, image, and namespace variables. `run` sets `HAKO_ADAPTER`, `PATH`, and `XDG_DATA_HOME` for the temporary install.
 
 The Redis smoke test uses the same adapter loop. It checks concrete minor and patch version discovery, floating-tag filtering, command installation, startup and readiness, client help/version without a server, and key access.
 

@@ -194,8 +194,7 @@ refute() {
 # Arguments:
 #   $1: Tool name.
 #   $2: Tool version.
-#   $3: Isolated mode, true or false.
-#   $4: Adapter, docker or apple.
+#   $3: Adapter, docker or apple.
 # Outputs:
 #   Temporary install directory path.
 # Returns:
@@ -204,8 +203,7 @@ refute() {
 install_tool() {
   local tool="${1:?tool is required}"
   local version="${2:?version is required}"
-  : "${3:?isolated is required}"
-  local adapter="${4:?adapter is required}"
+  local adapter="${3:?adapter is required}"
   local install_dir image
 
   install_dir="$(create_dir "$tool")"
@@ -231,5 +229,5 @@ run() {
   local install_dir="${2:?install dir is required}"
   shift 2
 
-  HAKO_ADAPTER="$adapter" MISE_PROJECT_ROOT="$install_dir" PATH="$install_dir/bin:$PATH" XDG_DATA_HOME="$install_dir/data" "$@"
+  HAKO_ADAPTER="$adapter" PATH="$install_dir/bin:$PATH" XDG_DATA_HOME="$install_dir/data" "$@"
 }

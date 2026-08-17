@@ -31,7 +31,7 @@ Keep each change in the layer that owns the behavior:
 Keep shared code independent of a specific service when the behavior is truly common. Put database commands, environment variables, image rules, and readiness behavior in the service implementation.
 
 Installed wrappers must work without the plugin checkout. Test the copied install layout, not paths into the repository.
-They receive resolved version, image, and isolation state from mise activation rather than an installation manifest.
+They receive resolved version, image, and namespace from mise activation rather than an installation manifest.
 
 ## Add a service
 
@@ -42,7 +42,7 @@ To add a service:
 1. Add its public name to the supported tool list.
 2. Add a Lua service module with its commands, image rules, version discovery, and activation environment.
 3. Add a multi-call wrapper for its server lifecycle and client commands.
-4. Reuse the activation state, instance naming, data directory, and global adapter model.
+4. Reuse the activation state, namespace naming, data directory, and global adapter model.
 5. Extend both runtime adapters where the service needs different behavior.
 6. Add registry fixtures and a smoke test for both adapters.
 7. Add `docs/services/<service>.md` with service-specific behavior and limitations.

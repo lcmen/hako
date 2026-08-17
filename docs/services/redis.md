@@ -47,10 +47,12 @@ Activation exports the wrapper state:
 ```text
 _HAKO_REDIS_VERSION=<resolved-version>
 _HAKO_REDIS_IMAGE=redis:<resolved-version>-alpine
-_HAKO_REDIS_ISOLATED=<true-or-false>
+_HAKO_REDIS_NAMESPACE=<namespace>
 ```
 
 These underscore-prefixed values are internal wrapper state. The wrapper requires them, so run Redis commands in an activated mise environment. No installation manifest is used.
+
+Missing and empty namespace options resolve to `global`. An explicit namespace must match `[a-z0-9]+(-[a-z0-9]+)*` and can be selected with `hako:redis[namespace=my-app]@7.4`.
 
 When `HAKO_DOMAIN` is configured, activation exports:
 
@@ -67,16 +69,16 @@ Hako does not publish a host port or configure host DNS. The server has no passw
 The managed container name is:
 
 ```text
-hako-redis-<version>-<instance>
+hako-redis-<version>-<namespace>
 ```
 
 Redis stores `/data` on the host at:
 
 ```text
-${XDG_DATA_HOME:-$HOME/.local/share}/hako/redis/<version>/<instance>
+${XDG_DATA_HOME:-$HOME/.local/share}/hako/redis/<version>/<namespace>
 ```
 
-Hako enables append-only persistence with `appendonly yes` and `appendfsync everysec`, following the official image's `/data` persistent-volume model. The container runs as the image's `redis` user, and Hako makes the version/instance data directory writable so bind mounts work with both runtimes. Up to roughly one second of acknowledged writes can be lost in a crash. Stopping Redis or uninstalling the mise tool does not delete this directory.
+Hako enables append-only persistence with `appendonly yes` and `appendfsync everysec`, following the official image's `/data` persistent-volume model. The container runs as the image's `redis` user, and Hako makes the version/namespace data directory writable so bind mounts work with both runtimes. Up to roughly one second of acknowledged writes can be lost in a crash. Stopping Redis or uninstalling the mise tool does not delete this directory.
 
 Docker uses `redis-cli ping` as the container healthcheck. Apple Container polls the same command inside the managed container.
 
@@ -84,4 +86,4 @@ Docker uses `redis-cli ping` as the container healthcheck. Apple Container polls
 
 - Images use tags and are not pinned by digest.
 - Authentication, TLS, host-port publishing, Sentinel, clustering, modules, and custom configuration are not supported.
-- Hako manages one Redis server per selected version and instance.
+- Hako manages one Redis server per selected version and namespace.

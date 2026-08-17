@@ -60,7 +60,7 @@ Activation adds the installed commands to `PATH` and sets:
 ```text
 _HAKO_POSTGRES_VERSION=<resolved-version>
 _HAKO_POSTGRES_IMAGE=postgres:<resolved-version>-alpine
-_HAKO_POSTGRES_ISOLATED=<true-or-false>
+_HAKO_POSTGRES_NAMESPACE=<namespace>
 PGUSER=postgres
 PGPASS=postgres
 ```
@@ -74,15 +74,15 @@ When `HAKO_DOMAIN` is set, activation also sets `PGHOST` to the deterministic co
 The server uses the shared `hako` network. Its name is:
 
 ```text
-hako-postgres-<version>-<instance>
+hako-postgres-<version>-<namespace>
 ```
 
-Global installs use the `global` instance. Isolated installs derive an instance from the project root.
+Missing and empty namespace options resolve to `global`. An explicit namespace must match `[a-z0-9]+(-[a-z0-9]+)*` and can be selected with `hako:postgres[namespace=my-app]@18.4`.
 
 PostgreSQL data is stored on the host:
 
 ```text
-${XDG_DATA_HOME:-$HOME/.local/share}/hako/postgres/<version>/<instance>
+${XDG_DATA_HOME:-$HOME/.local/share}/hako/postgres/<version>/<namespace>
 ```
 
 Stopping the server or uninstalling the mise tool does not remove this data.

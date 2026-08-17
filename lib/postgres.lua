@@ -30,14 +30,14 @@ end
 
 --- Returns PostgreSQL-specific environment variables for activation.
 ---@param ctx table Mise backend hook context.
+---@param namespace string Explicit namespace.
 ---@return table[] env_vars List of mise env var entries.
-function M.exec_env(ctx)
-    local isolated = utils.boolean_option(ctx, "isolated", false)
-    local container = utils.container_name("postgres", ctx.version, isolated)
+function M.exec_env(ctx, namespace)
+    local container = utils.container_name("postgres", ctx.version, namespace)
     local env_vars = {
-        { key = "_HAKO_POSTGRES_VERSION", value = ctx.version },
         { key = "_HAKO_POSTGRES_IMAGE", value = M.docker_image(ctx.version) },
-        { key = "_HAKO_POSTGRES_ISOLATED", value = isolated and "true" or "false" },
+        { key = "_HAKO_POSTGRES_NAMESPACE", value = namespace },
+        { key = "_HAKO_POSTGRES_VERSION", value = ctx.version },
         { key = "PGPASS", value = "postgres" },
         { key = "PGUSER", value = "postgres" },
     }
