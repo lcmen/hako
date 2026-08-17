@@ -6,9 +6,9 @@ set -euo pipefail
 # Builds the deterministic Docker container name.
 # Globals:
 #   TOOL
-#   VERSION
 # Arguments:
 #   $1: Namespace.
+#   $2: Compatibility family.
 # Outputs:
 #   Container name.
 # Returns:
@@ -16,9 +16,9 @@ set -euo pipefail
 #######################################
 container_name() {
   local namespace="${1:?namespace is required}"
+  local family="${2:?family is required}"
   local tool="${TOOL:?TOOL is required}"
-  local version="${VERSION:?VERSION is required}"
-  printf 'hako-%s-%s-%s\n' "$tool" "$(version_tag "$version")" "$namespace"
+  printf 'hako-%s-%s-%s\n' "$tool" "$(version_tag "$family")" "$namespace"
 }
 
 #######################################
@@ -26,10 +26,10 @@ container_name() {
 # Globals:
 #   HOME
 #   TOOL
-#   VERSION
 #   XDG_DATA_HOME
 # Arguments:
 #   $1: Namespace.
+#   $2: Compatibility family.
 # Outputs:
 #   Data directory path.
 # Returns:
@@ -37,8 +37,9 @@ container_name() {
 #######################################
 data_dir() {
   local namespace="${1:?namespace is required}"
+  local family="${2:?family is required}"
   local base="${XDG_DATA_HOME:-$HOME/.local/share}"
-  printf '%s/hako/%s/%s/%s\n' "$base" "$TOOL" "$VERSION" "$namespace"
+  printf '%s/hako/%s/%s/%s\n' "$base" "$TOOL" "$family" "$namespace"
 }
 
 #######################################

@@ -28,13 +28,22 @@ function M.docker_image(version)
     return "postgres:" .. version .. M.image_tag_suffix
 end
 
+--- Derives the PostgreSQL data compatibility family from a concrete release.
+---@param version string Validated concrete PostgreSQL release.
+---@return string family PostgreSQL major version.
+function M.version_family(version)
+    return version:match("^(%d+)")
+end
+
 --- Returns PostgreSQL-specific environment variables for activation.
 ---@param ctx table Mise backend hook context.
 ---@param namespace string Explicit namespace.
 ---@return table[] env_vars List of mise env var entries.
 function M.exec_env(ctx, namespace)
-    local container = utils.container_name("postgres", ctx.version, namespace)
+    local family = M.version_family(ctx.version)
+    local container = utils.container_name("postgres", family, namespace)
     local env_vars = {
+        { key = "_HAKO_POSTGRES_FAMILY", value = family },
         { key = "_HAKO_POSTGRES_IMAGE", value = M.docker_image(ctx.version) },
         { key = "_HAKO_POSTGRES_NAMESPACE", value = namespace },
         { key = "_HAKO_POSTGRES_VERSION", value = ctx.version },

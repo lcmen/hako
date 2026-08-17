@@ -25,6 +25,7 @@ source "$LIB_DIR/log.sh"
 
 readonly VERSION="${_HAKO_REDIS_VERSION:-}"
 readonly IMAGE="${_HAKO_REDIS_IMAGE:-}"
+readonly FAMILY="${_HAKO_REDIS_FAMILY:-}"
 readonly NAMESPACE="${_HAKO_REDIS_NAMESPACE:-}"
 readonly ADAPTER="${HAKO_ADAPTER:-}"
 
@@ -54,12 +55,12 @@ case "$ADAPTER" in
     ;;
 esac
 
-readonly CONTAINER="$(container_name "$NAMESPACE")"
+readonly CONTAINER="$(container_name "$NAMESPACE" "$FAMILY")"
 readonly NETWORK="hako"
 
 ensure_data_dir() {
   local data
-  data="$(data_dir "$NAMESPACE")"
+  data="$(data_dir "$NAMESPACE" "$FAMILY")"
   log_debug "Ensuring Redis data directory exists: $data"
   mkdir -p "$data"
   chmod 0777 "$data"
@@ -75,7 +76,7 @@ create_server_container() {
     --name "$CONTAINER" \
     --network "$NETWORK" \
     --user redis \
-    --volume "$(data_dir "$NAMESPACE"):/data" \
+    --volume "$(data_dir "$NAMESPACE" "$FAMILY"):/data" \
     "$IMAGE" redis-server \
     --appendonly yes \
     --appendfsync everysec >/dev/null

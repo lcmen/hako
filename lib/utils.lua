@@ -47,11 +47,11 @@ end
 
 --- Builds the deterministic container name.
 ---@param tool string Tool name.
----@param version string Tool version.
+---@param family string Compatibility family.
 ---@param namespace string Explicit namespace.
 ---@return string container Container name.
-function M.container_name(tool, version, namespace)
-    return "hako-" .. tool .. "-" .. M.version_tag(version) .. "-" .. namespace
+function M.container_name(tool, family, namespace)
+    return "hako-" .. tool .. "-" .. M.version_tag(family) .. "-" .. namespace
 end
 
 --- Validates and resolves the globally configured runtime adapter.

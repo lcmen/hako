@@ -10,6 +10,7 @@ ROOT_DIR="$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT_DIR/tests/helpers.sh"
 
 setup() {
+  export _HAKO_POSTGRES_FAMILY=18
   export _HAKO_POSTGRES_IMAGE=postgres:18.4-alpine
   export _HAKO_POSTGRES_NAMESPACE=smoke
   export _HAKO_POSTGRES_VERSION=18.4

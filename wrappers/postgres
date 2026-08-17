@@ -25,6 +25,7 @@ source "$LIB_DIR/log.sh"
 
 readonly VERSION="${_HAKO_POSTGRES_VERSION:-}"
 readonly IMAGE="${_HAKO_POSTGRES_IMAGE:-}"
+readonly FAMILY="${_HAKO_POSTGRES_FAMILY:-}"
 readonly NAMESPACE="${_HAKO_POSTGRES_NAMESPACE:-}"
 readonly ADAPTER="${HAKO_ADAPTER:-}"
 
@@ -63,12 +64,12 @@ case "$ADAPTER" in
     ;;
 esac
 
-readonly CONTAINER="$(container_name "$NAMESPACE")"
+readonly CONTAINER="$(container_name "$NAMESPACE" "$FAMILY")"
 readonly NETWORK="hako"
 
 ensure_data_dir() {
   local data
-  data="$(data_dir "$NAMESPACE")"
+  data="$(data_dir "$NAMESPACE" "$FAMILY")"
   log_debug "Ensuring PostgreSQL data directory exists: $data"
   mkdir -p "$data"
 }
@@ -82,7 +83,7 @@ create_server_container() {
   container_create "pg_isready -U $PGUSER" \
     --name "$CONTAINER" \
     --network "$NETWORK" \
-    --volume "$(data_dir "$NAMESPACE"):/var/lib/postgresql/data" \
+    --volume "$(data_dir "$NAMESPACE" "$FAMILY"):/var/lib/postgresql/data" \
     --env POSTGRES_DB="$PGUSER" \
     --env POSTGRES_USER="$PGUSER" \
     --env POSTGRES_PASSWORD="$PGPASS" \

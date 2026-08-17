@@ -18,6 +18,7 @@ cleanup() {
 }
 
 setup() {
+  export _HAKO_REDIS_FAMILY=7.4
   export _HAKO_REDIS_IMAGE=redis:7.4-alpine
   export _HAKO_REDIS_NAMESPACE=smoke
   export _HAKO_REDIS_VERSION=7.4
