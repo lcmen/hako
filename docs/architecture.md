@@ -48,7 +48,7 @@ Installed wrappers are self-contained. They use copies inside the versioned mise
 
 ### Activation
 
-The environment hook adds the install `bin/` directory to `PATH`. It exports the resolved version, exact image, and isolation state through underscore-prefixed, service-specific variables reserved for Hako's wrappers, then asks the tool module for any additional environment values. There is no per-installation manifest.
+The environment hook validates and resolves the service namespace, adds the install `bin/` directory to `PATH`, and exports the resolved version, exact image, and namespace through underscore-prefixed, service-specific variables reserved for Hako's wrappers. There is no per-installation manifest.
 
 Activation prepares commands for use. It does not start a server.
 
@@ -59,7 +59,7 @@ All command links for a tool point to the same wrapper. The wrapper checks the n
 At startup, the wrapper:
 
 1. Finds its versioned install directory.
-2. Validates activation-provided version, image, and isolation state.
+2. Validates activation-provided version, image, and namespace.
 3. Loads shared context helpers.
 4. Loads the runtime adapter named by the global `HAKO_ADAPTER` setting.
 
@@ -77,14 +77,14 @@ Docker and Apple Container use different command-line interfaces. Adapter files 
 
 The wrapper calls this common interface instead of calling a runtime directly. `HAKO_ADAPTER` must globally select `apple` or `docker`. Installation and execution use that same explicit setting; adapters are never auto-detected. Changing it requires stopping services through the old runtime, updating the setting, force-reinstalling tools to pull their images into the new runtime, and starting them again. Hako does not coordinate containers left running across runtimes.
 
-## Identity, Storage, and Isolation
+## Identity, Storage, and Namespaces
 
 Hako creates deterministic container and storage identities.
 
 The container name follows this form:
 
 ```text
-hako-<tool>-<version>-<instance>
+hako-<tool>-<version>-<namespace>
 ```
 
 All managed containers for one runtime use the shared `hako` network.
@@ -92,14 +92,12 @@ All managed containers for one runtime use the shared `hako` network.
 Persistent data is stored outside the mise install directory:
 
 ```text
-${XDG_DATA_HOME:-$HOME/.local/share}/hako/<tool>/<version>/<instance>
+${XDG_DATA_HOME:-$HOME/.local/share}/hako/<tool>/<version>/<namespace>
 ```
 
-Global mode uses one instance for a tool version. Isolated mode derives an instance from the project root, using a readable project slug and a small deterministic checksum. The project root comes from mise when available, then from Git, and finally from the current directory.
+Missing and empty namespace options resolve to `global`. Explicit namespaces must match `[a-z0-9]+(-[a-z0-9]+)*`. Each service resolves its own option, so PostgreSQL and Redis can use different namespaces in one environment. Project paths do not influence identity.
 
 Removing a container or uninstalling a mise tool must not remove its persistent data.
-
-The Lua activation code and shell runtime code both create instance identities. Their naming rules must stay in sync.
 
 ## Extension Boundaries
 

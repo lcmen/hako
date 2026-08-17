@@ -121,15 +121,15 @@ mise install --force hako:<service>@<version>
 
 Changing the setting while containers are running can leave those containers in the previous runtime. Hako does not coordinate containers across runtimes.
 
-## Isolation
+## Namespaces
 
-By default, database runs in global mode which gives you one database container instance for the selected version. Use `isolated = true` to create a project-specific instance, i.e.:
+By default, a database uses the `global` namespace, which gives it one container and datastore for the selected version. Set an explicit namespace when environments should not share state:
 
 ```bash
-mise use 'hako:postgres@18.4[isolated=true]'
+mise use 'hako:postgres[namespace=my-app]@18.4'
 ```
 
-This lets different projects use the same PostgreSQL version without sharing the same container or data directory.
+Namespaces contain lowercase letters and digits separated by single hyphens. PostgreSQL and Redis options are independent, so one mise environment can assign a different namespace to each service.
 
 ## Hostnames For Applications
 
@@ -150,13 +150,13 @@ HAKO_DOMAIN = "container"
 Apple Container resolves named containers as `<container-name>.<domain>`. `hako` creates the persistent container with a deterministic name, so when `HAKO_DOMAIN` is available to mise, activation exports the database host using the tool's environment convention:
 
 ```text
-PGHOST=hako-postgres-18-4-myapp-0abc.container
+PGHOST=hako-postgres-18-4-my-app.container
 ```
 
 Redis activation exports a URL with the same deterministic naming:
 
 ```text
-REDIS_URL=redis://hako-redis-7-4-myapp-0abc.container:6379
+REDIS_URL=redis://hako-redis-7-4-my-app.container:6379
 ```
 
 Rails can then use the activated environment:
@@ -195,7 +195,7 @@ Follow devdns instructions to setup resolvers: https://github.com/lcmen/devdns#h
 Database files are stored outside the mise install directory:
 
 ```text
-${XDG_DATA_HOME:-$HOME/.local/share}/hako/<service>/<version>/<instance>
+${XDG_DATA_HOME:-$HOME/.local/share}/hako/<service>/<version>/<namespace>
 ```
 
 Stopping a service removes its container but keeps the data directory. Redis mounts this directory at `/data` and enables AOF with `appendfsync everysec`.
@@ -216,7 +216,7 @@ Client commands run in short-lived containers on the shared network. Docker clie
 
 If the selected runtime removes the image later, wrappers fail with a clear message. Force-reinstall the selected hako tool to pull the image back.
 
-There is no per-installation manifest. Mise activation exports the resolved version, exact image, and isolation mode to wrappers through internal, service-specific `_HAKO_POSTGRES_*` or `_HAKO_REDIS_*` variables. Run installed commands in an activated mise environment.
+There is no per-installation manifest. Mise activation exports the resolved version, exact image, and namespace to wrappers through internal, service-specific `_HAKO_POSTGRES_*` or `_HAKO_REDIS_*` variables. Run installed commands in an activated mise environment.
 
 ## Current Limitations
 

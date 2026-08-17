@@ -18,11 +18,12 @@ cleanup() {
 }
 
 setup() {
+  export _HAKO_REDIS_FAMILY=7.4
   export _HAKO_REDIS_IMAGE=redis:7.4-alpine
-  export _HAKO_REDIS_ISOLATED=true
+  export _HAKO_REDIS_NAMESPACE=smoke
   export _HAKO_REDIS_VERSION=7.4
   local adapter="${1}"
-  local install_dir="$(install_tool redis 7.4 true "$adapter")"
+  local install_dir="$(install_tool redis 7.4 "$adapter")"
 
   INSTALL_DIRS+=("$install_dir")
   install_wrapper "$ROOT_DIR" "$install_dir" redis redis-server redis-cli

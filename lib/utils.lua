@@ -45,77 +45,13 @@ function M.arch()
     return nil
 end
 
---- Returns the final path segment.
----@param path string Path.
----@return string name Base name.
-function M.basename(path)
-    local value = tostring(path):gsub("/+$", "")
-    return value:match("([^/]+)$") or value
-end
-
---- Reads a boolean option from the mise context.
----@param ctx table Mise backend hook context.
----@param key string Option key to read.
----@param default boolean Default value when unset or unrecognized.
----@return boolean value Parsed boolean option.
-function M.boolean_option(ctx, key, default)
-    local value = M.table_option(ctx, key)
-    if value == nil then
-        return default
-    end
-    if value == true or value == "true" or value == "1" then
-        return true
-    end
-    if value == false or value == "false" or value == "0" then
-        return false
-    end
-    return default
-end
-
---- Computes a small deterministic checksum for a string.
----@param value string Input string.
----@return number checksum Decimal checksum in the range 0..65535.
-function M.byte_sum(value)
-    local sum = 0
-    for i = 1, #value do
-        sum = (sum + string.byte(value, i)) % 65536
-    end
-    return sum
-end
-
 --- Builds the deterministic container name.
 ---@param tool string Tool name.
----@param version string Tool version.
----@param isolated boolean Whether project isolation is enabled.
+---@param family string Compatibility family.
+---@param namespace string Explicit namespace.
 ---@return string container Container name.
-function M.container_name(tool, version, isolated)
-    return "hako-" .. tool .. "-" .. M.version_tag(version) .. "-" .. M.instance_name(isolated)
-end
-
---- Builds the instance identity for global or isolated mode.
----@param isolated boolean Whether project isolation is enabled.
----@return string instance "global" or "<project-slug>-<path-checksum>".
-function M.instance_name(isolated)
-    if isolated then
-        local root = M.project_root()
-        local slug = M.sanitize(M.basename(root))
-        return string.format("%s-%04x", slug, M.byte_sum(root))
-    end
-
-    return "global"
-end
-
---- Finds the current project root used for isolated identities.
----@return string root Project root.
-function M.project_root()
-    local env_root = os.getenv("MISE_PROJECT_ROOT")
-    if env_root ~= nil and env_root ~= "" then
-        return env_root
-    end
-
-    local cmd = require("cmd")
-    local root = cmd.exec("command -v git >/dev/null 2>&1 && git rev-parse --show-toplevel 2>/dev/null || pwd -P")
-    return tostring(root):gsub("%s+$", "")
+function M.container_name(tool, family, namespace)
+    return "hako-" .. tool .. "-" .. M.version_tag(family) .. "-" .. namespace
 end
 
 --- Validates and resolves the globally configured runtime adapter.
@@ -145,16 +81,31 @@ function M.resolve_adapter()
     return resolved
 end
 
---- Converts arbitrary text into a lowercase slug.
----@param value string Input string.
----@return string slug Slug containing only lowercase letters, digits, and hyphens.
-function M.sanitize(value)
-    local slug = tostring(value or "project"):lower()
-    slug = slug:gsub("[^a-z0-9]+", "-"):gsub("^-+", ""):gsub("-+$", "")
-    if slug == "" then
-        return "project"
+--- Resolves and validates the namespace option from the mise context.
+---@param ctx table Mise backend hook context.
+---@return string namespace Explicit namespace, defaulting to "global".
+function M.resolve_namespace(ctx)
+    if M.table_option(ctx, "isolated") ~= nil then
+        log.error("the 'isolated' option is no longer supported; use the 'namespace' option instead")
     end
-    return slug
+
+    local namespace = M.table_option(ctx, "namespace")
+    if namespace == nil or namespace == "" then
+        return "global"
+    end
+    if type(namespace) ~= "string" then
+        log.error("namespace must be a string matching [a-z0-9]+(-[a-z0-9]+)*")
+    end
+    if
+        namespace:match("^[a-z0-9-]+$") == nil
+        or namespace:match("^-") ~= nil
+        or namespace:match("-$") ~= nil
+        or namespace:match("%-%-") ~= nil
+    then
+        log.error("invalid namespace '" .. namespace .. "'; expected [a-z0-9]+(-[a-z0-9]+)*")
+    end
+
+    return namespace
 end
 
 --- Quotes a value for use as one POSIX shell argument.

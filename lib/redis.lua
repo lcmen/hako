@@ -21,22 +21,31 @@ function M.docker_image(version)
     return "redis:" .. version .. M.image_tag_suffix
 end
 
+--- Derives the Redis data compatibility family from a concrete release.
+---@param version string Validated concrete Redis release.
+---@return string family Redis major-minor release line.
+function M.version_family(version)
+    return version:match("^(%d+%.%d+)")
+end
+
 --- Returns Redis-specific environment variables for activation.
 ---@param ctx table Mise backend hook context.
+---@param namespace string Explicit namespace.
 ---@return table[] env_vars List of mise env var entries.
-function M.exec_env(ctx)
-    local isolated = utils.boolean_option(ctx, "isolated", false)
+function M.exec_env(ctx, namespace)
+    local family = M.version_family(ctx.version)
     local env_vars = {
-        { key = "_HAKO_REDIS_VERSION", value = ctx.version },
+        { key = "_HAKO_REDIS_FAMILY", value = family },
         { key = "_HAKO_REDIS_IMAGE", value = M.docker_image(ctx.version) },
-        { key = "_HAKO_REDIS_ISOLATED", value = isolated and "true" or "false" },
+        { key = "_HAKO_REDIS_NAMESPACE", value = namespace },
+        { key = "_HAKO_REDIS_VERSION", value = ctx.version },
     }
     local domain = os.getenv("HAKO_DOMAIN")
     if domain == nil or domain == "" then
         return env_vars
     end
 
-    local container = utils.container_name("redis", ctx.version, isolated)
+    local container = utils.container_name("redis", family, namespace)
     table.insert(env_vars, { key = "REDIS_URL", value = "redis://" .. container .. "." .. domain .. ":6379" })
     return env_vars
 end

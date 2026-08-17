@@ -25,7 +25,8 @@ source "$LIB_DIR/log.sh"
 
 readonly VERSION="${_HAKO_REDIS_VERSION:-}"
 readonly IMAGE="${_HAKO_REDIS_IMAGE:-}"
-readonly ISOLATED="${_HAKO_REDIS_ISOLATED:-}"
+readonly FAMILY="${_HAKO_REDIS_FAMILY:-}"
+readonly NAMESPACE="${_HAKO_REDIS_NAMESPACE:-}"
 readonly ADAPTER="${HAKO_ADAPTER:-}"
 
 if [[ -z "$VERSION" ]]; then
@@ -35,11 +36,6 @@ if [[ -z "$VERSION" ]]; then
 fi
 if [[ -z "$IMAGE" ]]; then
   log_error "_HAKO_REDIS_IMAGE is required"
-  log_error "Run this command in an activated mise environment"
-  exit 1
-fi
-if [[ -z "$ISOLATED" ]]; then
-  log_error "_HAKO_REDIS_ISOLATED is required"
   log_error "Run this command in an activated mise environment"
   exit 1
 fi
@@ -59,12 +55,12 @@ case "$ADAPTER" in
     ;;
 esac
 
-readonly CONTAINER="$(container_name)"
+readonly CONTAINER="$(container_name "$NAMESPACE" "$FAMILY")"
 readonly NETWORK="hako"
 
 ensure_data_dir() {
   local data
-  data="$(data_dir)"
+  data="$(data_dir "$NAMESPACE" "$FAMILY")"
   log_debug "Ensuring Redis data directory exists: $data"
   mkdir -p "$data"
   chmod 0777 "$data"
@@ -80,7 +76,7 @@ create_server_container() {
     --name "$CONTAINER" \
     --network "$NETWORK" \
     --user redis \
-    --volume "$(data_dir):/data" \
+    --volume "$(data_dir "$NAMESPACE" "$FAMILY"):/data" \
     "$IMAGE" redis-server \
     --appendonly yes \
     --appendfsync everysec >/dev/null

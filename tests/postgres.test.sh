@@ -10,13 +10,14 @@ ROOT_DIR="$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT_DIR/tests/helpers.sh"
 
 setup() {
+  export _HAKO_POSTGRES_FAMILY=18
   export _HAKO_POSTGRES_IMAGE=postgres:18.4-alpine
-  export _HAKO_POSTGRES_ISOLATED=true
+  export _HAKO_POSTGRES_NAMESPACE=smoke
   export _HAKO_POSTGRES_VERSION=18.4
   export PGPASS=postgres
   export PGUSER=postgres
   local adapter="${1}"
-  local install_dir="$(install_tool postgres 18.4 true "$adapter")"
+  local install_dir="$(install_tool postgres 18.4 "$adapter")"
 
   INSTALL_DIRS+=("$install_dir")
   install_wrapper "$ROOT_DIR" "$install_dir" postgres pg_ctl psql pg_dump pg_restore
@@ -70,6 +71,7 @@ service_test() {
   run "$adapter" "$install_dir" pg_ctl status
   run "$adapter" "$install_dir" psql -c 'select 1 as ok;'
   run "$adapter" "$install_dir" psql --set ON_ERROR_STOP=1 <"$ROOT_DIR/tests/fixtures/dump.sql"
+
   run "$adapter" "$install_dir" psql --set ON_ERROR_STOP=1 -c 'drop table hako_restore_fixture;'
   run "$adapter" "$install_dir" pg_dump --format=custom --file "$dump_file" postgres
   run "$adapter" "$install_dir" pg_restore --dbname postgres "$dump_file"
