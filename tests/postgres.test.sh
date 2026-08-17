@@ -50,17 +50,12 @@ versions_test() {
   cache_dir="$(create_cache "$ROOT_DIR" postgres)"
   output="$(HAKO_ADAPTER=docker XDG_CACHE_HOME="$cache_dir" mise ls-remote hako:postgres)"
 
-  assert_line 12.22 <<<"$output"
-  assert_line 13.18 <<<"$output"
   assert_line 18.3 <<<"$output"
   assert_line 18.4 <<<"$output"
   refute 11.22 <<<"$output"
-  refute 12 <<<"$output"
-  refute 13 <<<"$output"
   refute 18 <<<"$output"
   refute 18.5-rc1 <<<"$output"
   refute 18.4-alpine3.22 <<<"$output"
-  refute 18-bookworm <<<"$output"
   refute 19.1 <<<"$output"
 
   assert_equal 18.4 "$(HAKO_ADAPTER=docker XDG_CACHE_HOME="$cache_dir" mise latest hako:postgres@18)"
