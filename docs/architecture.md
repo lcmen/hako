@@ -30,7 +30,7 @@ The shell code handles installed commands:
 
 ### Version discovery
 
-The version-list hook loads the requested tool module. The tool module asks the registry layer for image tags, filters them into supported versions, and returns them to mise in version order.
+The version-list hook loads the requested tool module. The tool module asks the registry layer for image tags, filters them into supported concrete versions, and returns them to mise in version order. Mutable major-only image tags are not exposed. A major selector therefore resolves to an exact release, and `mise upgrade` can detect when that resolved release changes.
 
 Registry responses are cached for a limited time. Users can bypass the cache when they need fresh registry data.
 

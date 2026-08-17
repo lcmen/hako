@@ -58,19 +58,18 @@ shellcheck wrappers/postgres wrappers/redis wrappers/lib/*.sh tests/*.sh
 
 ## How the smoke test works
 
-For each available adapter, `tests/postgres.test.sh`:
+Before checking adapters, `tests/postgres.test.sh` uses `tests/fixtures/postgres.json` to verify version filtering and major-selector resolution without a registry request. For each available adapter, it then:
 
 1. Creates a temporary install under `/tmp`.
 2. Copies the wrapper files and supplies activation state through environment variables.
 3. Creates the command symlinks used by the test.
-4. Uses `tests/fixtures/postgres.json` to test version filtering without a registry request.
-5. Starts PostgreSQL and checks its status.
-6. Runs a query and a dump-and-restore round trip.
-7. Stops and removes the managed container.
+4. Starts PostgreSQL and checks its status.
+5. Runs a query and a dump-and-restore round trip.
+6. Stops and removes the managed container.
 
 `tests/helpers.sh` provides setup, adapter, assertion, and command helpers. Each service setup exports its service-specific version, image, and isolation variables. `run` sets `HAKO_ADAPTER`, `MISE_PROJECT_ROOT`, `PATH`, and `XDG_DATA_HOME` for the temporary install.
 
-The Redis smoke test uses the same adapter loop. It checks major, minor, and patch version discovery; command installation; startup and readiness; client help/version without a server; and key access.
+The Redis smoke test uses the same adapter loop. It checks concrete minor and patch version discovery, floating-tag filtering, command installation, startup and readiness, client help/version without a server, and key access.
 
 ## Write or extend a test
 

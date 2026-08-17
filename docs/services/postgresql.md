@@ -30,7 +30,9 @@ dropuser
 
 ## Versions and installation
 
-Version discovery reads PostgreSQL tags from Docker Hub. Hako accepts exact Alpine tags such as `18-alpine` and `18.4-alpine`, then exposes them as versions `18` and `18.4`. It supports PostgreSQL 12 and newer and filters images for the current `amd64` or `arm64` host.
+Version discovery reads PostgreSQL tags from Docker Hub. Hako exposes concrete Alpine releases such as `18.3` and `18.4`, but excludes the mutable `18` major-only tag. It supports PostgreSQL 12 and newer and filters images for the current `amd64` or `arm64` host.
+
+Use a major selector such as `hako:postgres@18`. Mise resolves it to the newest matching concrete release. Run `CACHE=0 mise upgrade` to discover and install a newer release immediately.
 
 Registry results are cached for 24 hours:
 
@@ -43,7 +45,7 @@ Set `CACHE=0` to bypass the cache.
 Installation pulls:
 
 ```text
-postgres:<version>-alpine
+postgres:<resolved-version>-alpine
 ```
 
 Wrappers do not pull the image later. If it is missing, force a mise install to pull it again.

@@ -19,7 +19,7 @@ M.image_tag_name_filter = "alpine"
 M.minimum_major_version = 12
 M.registry_cache_name = "postgres.json"
 M.wrapper = "postgres"
-M.version_tag_pattern = "^(%d+%.?%d*)%-alpine$"
+M.version_tag_pattern = "^(%d+%.%d+)%-alpine$"
 
 --- Builds the Docker image reference for a PostgreSQL version.
 ---@param version string PostgreSQL version selected by mise.

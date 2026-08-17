@@ -12,7 +12,7 @@ M.image_tag_name_filter = "alpine"
 M.minimum_major_version = 6
 M.registry_cache_name = "redis.json"
 M.wrapper = "redis"
-M.version_tag_pattern = "^(%d+%.?%d*%.?%d*)%-alpine$"
+M.version_tag_pattern = "^(%d+%.%d+%.?%d*)%-alpine$"
 
 --- Builds the Docker image reference for a Redis version.
 ---@param version string Redis version selected by mise.

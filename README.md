@@ -31,20 +31,24 @@ mise plugin link hako /path/to/hako
 Add PostgreSQL to `mise.toml`:
 
 ```bash
-mise use hako:postgres@18.4
+mise use hako:postgres@18
 ```
 
 Or add Redis:
 
 ```bash
-mise use hako:redis@7.4
+mise use hako:redis@7
 ```
+
+Major selectors are recommended. Mise resolves them to the newest concrete matching release, so the examples above may resolve to versions such as PostgreSQL `18.4` and Redis `7.4.2`. Hako excludes mutable major-only image tags and pulls the exact resolved image during installation.
+
+Run `CACHE=0 mise upgrade` to refresh registry data immediately and install a newer concrete release that matches the selector.
 
 During install, `hako` pulls:
 
 ```text
 postgres:18.4-alpine
-redis:7.4-alpine
+redis:7.4.2-alpine
 ```
 
 and installs self-contained wrapper commands into the mise tool installation. Resolved version and image state is passed to those wrappers when mise activates the tool.
