@@ -45,17 +45,25 @@ cleanup() {
 }
 
 versions_test() {
-  local adapter="${1}"
   local cache_dir output
 
   cache_dir="$(create_cache "$ROOT_DIR" postgres)"
-  output="$(HAKO_ADAPTER="$adapter" XDG_CACHE_HOME="$cache_dir" mise ls-remote hako:postgres)"
+  output="$(HAKO_ADAPTER=docker XDG_CACHE_HOME="$cache_dir" mise ls-remote hako:postgres)"
 
-  assert_line 12 <<<"$output"
-  assert_line 13 <<<"$output"
-  assert_line 18 <<<"$output"
+  assert_line 12.22 <<<"$output"
+  assert_line 13.18 <<<"$output"
+  assert_line 18.3 <<<"$output"
   assert_line 18.4 <<<"$output"
+  refute 11.22 <<<"$output"
+  refute 12 <<<"$output"
+  refute 13 <<<"$output"
+  refute 18 <<<"$output"
+  refute 18.5-rc1 <<<"$output"
   refute 18.4-alpine3.22 <<<"$output"
+  refute 18-bookworm <<<"$output"
+  refute 19.1 <<<"$output"
+
+  assert_equal 18.4 "$(HAKO_ADAPTER=docker XDG_CACHE_HOME="$cache_dir" mise latest hako:postgres@18)"
 }
 
 service_test() {
@@ -71,6 +79,8 @@ service_test() {
   run "$adapter" "$install_dir" pg_dump --format=custom --file "$dump_file" postgres
   run "$adapter" "$install_dir" pg_restore --dbname postgres "$dump_file"
 }
+
+versions_test
 
 for adapter in "${ADAPTERS[@]}"; do
   if ! adapter_available "$adapter"; then
@@ -88,7 +98,6 @@ for adapter in "${ADAPTERS[@]}"; do
 
   setup "$adapter"
   activation_state_test
-  versions_test "$adapter"
   service_test "$adapter"
   cleanup "$adapter"
   trap - EXIT

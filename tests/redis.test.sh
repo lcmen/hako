@@ -46,17 +46,27 @@ activation_state_test() {
 }
 
 versions_test() {
-  local adapter="${1}"
   local cache_dir output
 
   cache_dir="$(create_cache "$ROOT_DIR" redis)"
-  output="$(HAKO_ADAPTER="$adapter" XDG_CACHE_HOME="$cache_dir" mise ls-remote hako:redis)"
+  output="$(HAKO_ADAPTER=docker XDG_CACHE_HOME="$cache_dir" mise ls-remote hako:redis)"
 
-  assert_line 6 <<<"$output"
-  assert_line 7 <<<"$output"
+  assert_line 6.0 <<<"$output"
+  assert_line 6.1.9 <<<"$output"
+  assert_line 6.2 <<<"$output"
+  assert_line 6.2.17 <<<"$output"
+  assert_line 7.4 <<<"$output"
+  assert_line 7.4.2 <<<"$output"
   refute 5 <<<"$output"
+  refute 5.0.14 <<<"$output"
+  refute 6 <<<"$output"
+  refute 7 <<<"$output"
+  refute 8.0-rc1 <<<"$output"
   refute 8.0.1-alpine3.21 <<<"$output"
+  refute 8.0.2-bookworm <<<"$output"
   refute 9 <<<"$output"
+
+  assert_equal 7.4.2 "$(HAKO_ADAPTER=docker XDG_CACHE_HOME="$cache_dir" mise latest hako:redis@7)"
 }
 
 service_test() {
@@ -72,6 +82,8 @@ service_test() {
   assert_equal OK "$(run "$adapter" "$install_dir" redis-cli --raw set hako:persistence survived)"
   assert_equal survived "$(run "$adapter" "$install_dir" redis-cli --raw get hako:persistence)"
 }
+
+versions_test
 
 for adapter in "${ADAPTERS[@]}"; do
   if ! adapter_available "$adapter"; then
@@ -89,7 +101,6 @@ for adapter in "${ADAPTERS[@]}"; do
 
   setup "$adapter"
   activation_state_test
-  versions_test "$adapter"
   service_test "$adapter"
   cleanup "$adapter"
   trap - EXIT

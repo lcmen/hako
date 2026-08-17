@@ -7,6 +7,13 @@
     ]
   },
   {
+    "name": "5.0.14-alpine",
+    "images": [
+      { "os": "linux", "architecture": "amd64" },
+      { "os": "linux", "architecture": "arm64" }
+    ]
+  },
+  {
     "name": "6-alpine",
     "images": [
       { "os": "linux", "architecture": "amd64" },

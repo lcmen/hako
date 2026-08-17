@@ -23,7 +23,9 @@ redis-cli
 
 ## Versions and installation
 
-Version discovery reads tags from the official Redis repository on Docker Hub. Hako exposes stable numeric Alpine aliases for Redis 6 and newer releases, including major, minor, and patch aliases. Release candidates, distro-pinned tags such as `8.0-alpine3.21`, non-Alpine tags, pre-6 releases, and tags missing the current host's `amd64` or `arm64` image are excluded.
+Version discovery reads tags from the official Redis repository on Docker Hub. Hako exposes stable numeric Alpine minor and patch releases for Redis 6 and newer, such as `7.4` and `7.4.2`, but excludes the mutable `7` major-only tag. Release candidates, distro-pinned tags such as `8.0-alpine3.21`, non-Alpine tags, pre-6 releases, and tags missing the current host's `amd64` or `arm64` image are also excluded.
+
+Use a major selector such as `hako:redis@7`. Mise resolves it to the newest matching concrete release. Run `CACHE=0 mise upgrade` to discover and install a newer release immediately.
 
 Registry results are cached for 24 hours:
 
@@ -31,7 +33,7 @@ Registry results are cached for 24 hours:
 ${XDG_CACHE_HOME:-$HOME/.cache}/hako/redis.json
 ```
 
-Set `CACHE=0` to bypass the cache. Installation pulls `redis:<version>-alpine`; wrapper execution never pulls an image.
+Set `CACHE=0` to bypass the cache. Installation pulls `redis:<resolved-version>-alpine`; wrapper execution never pulls an image.
 
 Installation and execution require the same global `HAKO_ADAPTER` value (`apple` or `docker`). Hako does not auto-detect a runtime.
 To change adapters, stop Redis through the old adapter, update the global setting, force-reinstall the tool, and then start it through the new adapter. Otherwise, its old container can remain in the previous runtime.
