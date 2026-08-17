@@ -35,6 +35,9 @@ function M.exec_env(ctx)
     local isolated = utils.boolean_option(ctx, "isolated", false)
     local container = utils.container_name("postgres", ctx.version, isolated)
     local env_vars = {
+        { key = "_HAKO_POSTGRES_VERSION", value = ctx.version },
+        { key = "_HAKO_POSTGRES_IMAGE", value = M.docker_image(ctx.version) },
+        { key = "_HAKO_POSTGRES_ISOLATED", value = isolated and "true" or "false" },
         { key = "PGPASS", value = "postgres" },
         { key = "PGUSER", value = "postgres" },
     }

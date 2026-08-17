@@ -25,16 +25,20 @@ end
 ---@param ctx table Mise backend hook context.
 ---@return table[] env_vars List of mise env var entries.
 function M.exec_env(ctx)
+    local isolated = utils.boolean_option(ctx, "isolated", false)
+    local env_vars = {
+        { key = "_HAKO_REDIS_VERSION", value = ctx.version },
+        { key = "_HAKO_REDIS_IMAGE", value = M.docker_image(ctx.version) },
+        { key = "_HAKO_REDIS_ISOLATED", value = isolated and "true" or "false" },
+    }
     local domain = os.getenv("HAKO_DOMAIN")
     if domain == nil or domain == "" then
-        return {}
+        return env_vars
     end
 
-    local isolated = utils.boolean_option(ctx, "isolated", false)
     local container = utils.container_name("redis", ctx.version, isolated)
-    return {
-        { key = "REDIS_URL", value = "redis://" .. container .. "." .. domain .. ":6379" },
-    }
+    table.insert(env_vars, { key = "REDIS_URL", value = "redis://" .. container .. "." .. domain .. ":6379" })
+    return env_vars
 end
 
 --- Lists supported Redis versions from the configured registry source.

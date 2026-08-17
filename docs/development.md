@@ -16,7 +16,8 @@ Link this checkout as the `hako` plugin:
 mise plugin link hako /path/to/hako
 ```
 
-You also need a running Docker daemon or Apple Container service for runtime tests.
+You also need `HAKO_ADAPTER` set globally to `docker` or `apple`, with that runtime's service running.
+Hako does not auto-detect a runtime. When changing adapters, stop services through the old adapter, update the global setting, force-reinstall configured tools, and then start them through the new adapter.
 
 ## Make a change
 
@@ -30,6 +31,7 @@ Keep each change in the layer that owns the behavior:
 Keep shared code independent of a specific service when the behavior is truly common. Put database commands, environment variables, image rules, and readiness behavior in the service implementation.
 
 Installed wrappers must work without the plugin checkout. Test the copied install layout, not paths into the repository.
+They receive resolved version, image, and isolation state from mise activation rather than an installation manifest.
 
 ## Add a service
 
@@ -40,7 +42,7 @@ To add a service:
 1. Add its public name to the supported tool list.
 2. Add a Lua service module with its commands, image rules, version discovery, and activation environment.
 3. Add a multi-call wrapper for its server lifecycle and client commands.
-4. Reuse the manifest, instance naming, data directory, and adapter model.
+4. Reuse the activation state, instance naming, data directory, and global adapter model.
 5. Extend both runtime adapters where the service needs different behavior.
 6. Add registry fixtures and a smoke test for both adapters.
 7. Add `docs/services/<service>.md` with service-specific behavior and limitations.

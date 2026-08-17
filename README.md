@@ -9,7 +9,8 @@ Current status: PostgreSQL and Redis on Docker and Apple Container.
 ## Requirements
 
 - [mise](https://mise.jdx.dev/)
-- One usable runtime: Docker with a running daemon, or Apple Container with a running service
+- `HAKO_ADAPTER` set globally to `docker` or `apple`
+- The configured runtime, with its CLI installed and service running
 - Apple Container requires Apple silicon and macOS 26 or later
 - Network access during `mise install` so the selected runtime can pull the database image
 
@@ -46,7 +47,7 @@ postgres:18.4-alpine
 redis:7.4-alpine
 ```
 
-and installs wrapper commands into the mise tool installation. The selected runtime adapter is recorded in that installation.
+and installs self-contained wrapper commands into the mise tool installation. Resolved version and image state is passed to those wrappers when mise activates the tool.
 
 Version discovery is cached for 24 hours in:
 
@@ -86,7 +87,7 @@ See [PostgreSQL](docs/services/postgresql.md) and [Redis](docs/services/redis.md
 
 ## Container Runtime
 
-During `mise install`, hako prefers a usable Apple Container service, then a usable Docker daemon. Set `HAKO_ADAPTER` in mise config before installing to choose explicitly:
+Hako requires one global runtime choice. Set `HAKO_ADAPTER` in your global mise config before installing:
 
 ```toml
 # ~/.config/mise/config.toml
@@ -101,11 +102,20 @@ Apple Container must be installed and started first:
 container system start
 ```
 
-Changing `HAKO_ADAPTER` after installation is rejected so wrappers never mix runtimes. Force-reinstall with the intended adapter instead:
+Installation and wrapper execution always use this setting; Hako never auto-detects or silently switches runtimes. To change it:
+
+1. Stop all Hako services while the old adapter is still configured.
+2. Change `HAKO_ADAPTER` in the global mise config.
+3. Force-reinstall every configured Hako tool so its image is pulled into the new runtime.
+4. Start the services again.
+
+For example, after changing the setting:
 
 ```bash
 mise install --force hako:<service>@<version>
 ```
+
+Changing the setting while containers are running can leave those containers in the previous runtime. Hako does not coordinate containers across runtimes.
 
 ## Isolation
 
@@ -201,6 +211,8 @@ Starting a service creates a persistent container and waits until it is ready be
 Client commands run in short-lived containers on the shared network. Docker clients connect to the managed container by name; Apple Container clients connect to its IPv4 address on that network.
 
 If the selected runtime removes the image later, wrappers fail with a clear message. Force-reinstall the selected hako tool to pull the image back.
+
+There is no per-installation manifest. Mise activation exports the resolved version, exact image, and isolation mode to wrappers through internal, service-specific `_HAKO_POSTGRES_*` or `_HAKO_REDIS_*` variables. Run installed commands in an activated mise environment.
 
 ## Current Limitations
 

@@ -48,14 +48,22 @@ postgres:<version>-alpine
 
 Wrappers do not pull the image later. If it is missing, force a mise install to pull it again.
 
+Installation and execution require the same global `HAKO_ADAPTER` value (`apple` or `docker`). Hako does not auto-detect a runtime.
+To change adapters, stop PostgreSQL through the old adapter, update the global setting, force-reinstall the tool, and then start it through the new adapter. Otherwise, its old container can remain in the previous runtime.
+
 ## Environment
 
 Activation adds the installed commands to `PATH` and sets:
 
 ```text
+_HAKO_POSTGRES_VERSION=<resolved-version>
+_HAKO_POSTGRES_IMAGE=postgres:<resolved-version>-alpine
+_HAKO_POSTGRES_ISOLATED=<true-or-false>
 PGUSER=postgres
 PGPASS=postgres
 ```
+
+These underscore-prefixed values are internal wrapper state. The wrapper requires this activation state, so run PostgreSQL commands in an activated mise environment. No installation manifest is used.
 
 When `HAKO_DOMAIN` is set, activation also sets `PGHOST` to the deterministic container hostname. Hako does not configure host DNS.
 

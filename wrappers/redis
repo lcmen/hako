@@ -17,19 +17,35 @@ while [[ -L "$script_path" ]]; do
 done
 
 readonly LIB_DIR="$(CDPATH='' cd -- "$(dirname -- "$script_path")" && pwd)"
-readonly INSTALL_DIR="$(CDPATH='' cd -- "$LIB_DIR/.." && pwd)"
+# Used by sourced context helpers.
+# shellcheck disable=SC2034
+readonly TOOL="redis"
 
 source "$LIB_DIR/log.sh"
 
-if [[ ! -f "$INSTALL_DIR/manifest" ]]; then
-  log_error "Hako manifest not found: $INSTALL_DIR/manifest"
+readonly VERSION="${_HAKO_REDIS_VERSION:-}"
+readonly IMAGE="${_HAKO_REDIS_IMAGE:-}"
+readonly ISOLATED="${_HAKO_REDIS_ISOLATED:-}"
+readonly ADAPTER="${HAKO_ADAPTER:-}"
+
+if [[ -z "$VERSION" ]]; then
+  log_error "_HAKO_REDIS_VERSION is required"
+  log_error "Run this command in an activated mise environment"
   exit 1
 fi
-
-source "$INSTALL_DIR/manifest"
+if [[ -z "$IMAGE" ]]; then
+  log_error "_HAKO_REDIS_IMAGE is required"
+  log_error "Run this command in an activated mise environment"
+  exit 1
+fi
+if [[ -z "$ISOLATED" ]]; then
+  log_error "_HAKO_REDIS_ISOLATED is required"
+  log_error "Run this command in an activated mise environment"
+  exit 1
+fi
 source "$LIB_DIR/context.sh"
 
-case "${ADAPTER:-}" in
+case "$ADAPTER" in
   apple)
     source "$LIB_DIR/apple.sh"
     ;;
@@ -37,8 +53,8 @@ case "${ADAPTER:-}" in
     source "$LIB_DIR/docker.sh"
     ;;
   *)
-    log_error "Hako manifest has an unsupported adapter: ${ADAPTER:-missing}"
-    log_error "Force-reinstall this tool to create a valid manifest"
+    log_error "HAKO_ADAPTER must be set to 'apple' or 'docker' in your global mise configuration"
+    log_error "Configured value: ${ADAPTER:-missing}"
     exit 1
     ;;
 esac

@@ -23,7 +23,7 @@ See [Architecture](architecture.md) for component boundaries and [Testing](testi
 - Use readonly `UPPER_SNAKE_CASE` names for wrapper constants such as `LIB_DIR`, `INSTALL_DIR`, `CONTAINER`, and `NETWORK`.
 - Quote variable expansions. Use arrays for argument lists, `[[ ... ]]` for tests, and `(( ... ))` for arithmetic.
 - Validate required arguments at function entry, for example `${1:?container name is required}`.
-- Prefer explicit arguments. If a helper reads manifest or environment variables, list them in its `Globals:` documentation.
+- Prefer explicit arguments. If a helper reads environment variables, list them in its `Globals:` documentation.
 - Document shared helpers with the existing purpose, arguments, output, and return-status blocks.
 - Keep functions in `wrappers/lib/*.sh` in alphabetical order.
 - Use `printf` for structured output. Send errors and recovery instructions to stderr.

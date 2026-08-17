@@ -118,28 +118,31 @@ function M.project_root()
     return tostring(root):gsub("%s+$", "")
 end
 
---- Resolves the runtime adapter for an installation.
+--- Validates and resolves the globally configured runtime adapter.
 ---@return string adapter "apple" or "docker"
 function M.resolve_adapter()
     local requested = os.getenv("HAKO_ADAPTER")
 
-    if requested ~= nil and requested ~= "" then
-        log.debug("Checking requested " .. requested .. " adapter")
-        local resolved = adapter_available(requested)
-        if resolved == nil then
-            log.error("hako adapter " .. requested .. " is not available")
-        end
-        log.debug("Selected " .. resolved .. " adapter")
-        return resolved
-    else
-        log.debug("Detecting an available container adapter")
-        local resolved = adapter_available("apple") or adapter_available("docker")
-        if resolved == nil then
-            log.error("hako requires a running Apple Container or Docker daemon")
-        end
-        log.debug("Selected " .. resolved .. " adapter")
-        return resolved
+    if requested == nil or requested == "" then
+        log.error("HAKO_ADAPTER is required; set it to 'apple' or 'docker' in your global mise configuration")
     end
+    if requested ~= "apple" and requested ~= "docker" then
+        log.error(
+            "unsupported HAKO_ADAPTER '"
+                .. requested
+                .. "'; set it to 'apple' or 'docker' in your global mise configuration"
+        )
+    end
+
+    log.debug("Checking configured " .. requested .. " adapter")
+    local resolved = adapter_available(requested)
+    if resolved == nil then
+        log.error(
+            "hako adapter " .. requested .. " is not available; verify its CLI is installed and its service is running"
+        )
+    end
+    log.debug("Selected " .. resolved .. " adapter")
+    return resolved
 end
 
 --- Converts arbitrary text into a lowercase slug.

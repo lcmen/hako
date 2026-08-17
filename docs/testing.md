@@ -16,7 +16,8 @@ Link the local plugin so mise can run its backend hooks:
 mise plugin link hako /path/to/hako
 ```
 
-Runtime tests need Docker, Apple Container, or both. The runtime service must be running. Missing test images are pulled before the test.
+Runtime tests need Docker, Apple Container, or both. The runtime service must be running. Tests explicitly set `HAKO_ADAPTER` for each adapter run, and missing test images are pulled before the test.
+Hako does not auto-detect an adapter. Outside the test harness, changing the global setting requires stopping services through the old adapter and force-reinstalling tools after the change.
 
 The smoke test skips a runtime that is not available. Both runtimes are needed for complete adapter coverage, but the script does not require both to exit successfully.
 
@@ -54,14 +55,14 @@ shellcheck wrappers/postgres wrappers/redis wrappers/lib/*.sh tests/*.sh
 For each available adapter, `tests/postgres.test.sh`:
 
 1. Creates a temporary install under `/tmp`.
-2. Writes a manifest and copies the wrapper files.
+2. Copies the wrapper files and supplies activation state through environment variables.
 3. Creates the command symlinks used by the test.
 4. Uses `tests/fixtures/postgres.json` to test version filtering without a registry request.
 5. Starts PostgreSQL and checks its status.
 6. Runs a query and a dump-and-restore round trip.
 7. Stops and removes the managed container.
 
-`tests/helpers.sh` provides setup, adapter, assertion, and command helpers. `run` sets `HAKO_ADAPTER`, `MISE_PROJECT_ROOT`, `PATH`, and `XDG_DATA_HOME` for the temporary install.
+`tests/helpers.sh` provides setup, adapter, assertion, and command helpers. Each service setup exports its service-specific version, image, and isolation variables. `run` sets `HAKO_ADAPTER`, `MISE_PROJECT_ROOT`, `PATH`, and `XDG_DATA_HOME` for the temporary install.
 
 The Redis smoke test uses the same adapter loop. It checks major, minor, and patch version discovery; command installation; startup and readiness; client help/version without a server; and key access.
 
