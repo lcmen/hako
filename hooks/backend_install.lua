@@ -29,7 +29,7 @@ local function install_wrapper(ctx, tool)
     log.debug("Installed " .. tostring(#tool.bins) .. " command wrappers")
 end
 
---- Pulls the selected OCI image with the adapter chosen for this installation.
+--- Pulls the selected OCI image with the globally configured adapter.
 ---@param image string OCI image reference to pull.
 ---@param resolved_adapter string Runtime adapter, either "apple" or "docker".
 ---@return nil
@@ -48,28 +48,9 @@ local function pull_image(image, resolved_adapter)
     log.info("Pulled " .. image)
 end
 
---- Writes the wrapper manifest consumed by installed command symlinks.
----@param ctx table Mise backend hook context.
----@param image string OCI image reference persisted for wrapper execution.
----@param isolated boolean Whether this install uses project-isolated instances.
----@param resolved_adapter string Runtime adapter persisted for wrapper execution.
----@return nil
-local function write_manifest(ctx, image, isolated, resolved_adapter)
-    local manifest = file.join_path(ctx.install_path, "manifest")
-    local manifest_file = assert(io.open(manifest, "w"))
-    manifest_file:write("TOOL=" .. ctx.tool .. "\n")
-    manifest_file:write("VERSION=" .. ctx.version .. "\n")
-    manifest_file:write("IMAGE=" .. image .. "\n")
-    manifest_file:write("ISOLATED=" .. (isolated and "true" or "false") .. "\n")
-    manifest_file:write("ADAPTER=" .. resolved_adapter .. "\n")
-    manifest_file:close()
-    log.debug("Wrote install manifest to " .. manifest)
-end
-
 function PLUGIN:BackendInstall(ctx)
     local tool = utils.tool(ctx.tool)
     local image = tool.docker_image(ctx.version)
-    local isolated = utils.boolean_option(ctx, "isolated", false)
     local resolved_adapter = utils.resolve_adapter()
 
     log.debug("Installing " .. ctx.tool .. " " .. ctx.version .. " from " .. image)
@@ -77,7 +58,6 @@ function PLUGIN:BackendInstall(ctx)
     pull_image(image, resolved_adapter)
 
     install_wrapper(ctx, tool)
-    write_manifest(ctx, image, isolated, resolved_adapter)
 
     return {}
 end

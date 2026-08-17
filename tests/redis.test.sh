@@ -18,6 +18,9 @@ cleanup() {
 }
 
 setup() {
+  export _HAKO_REDIS_IMAGE=redis:7.4-alpine
+  export _HAKO_REDIS_ISOLATED=true
+  export _HAKO_REDIS_VERSION=7.4
   local adapter="${1}"
   local install_dir="$(install_tool redis 7.4 true "$adapter")"
 
@@ -28,6 +31,20 @@ setup() {
   [[ -x "$install_dir/bin/redis-cli" ]]
 }
 
+activation_state_test() {
+  local install_dir="${INSTALL_DIRS[$((${#INSTALL_DIRS[@]} - 1))]}"
+  local output status
+
+  capture output status env -u _HAKO_REDIS_IMAGE PATH="$install_dir/bin:$PATH" HAKO_ADAPTER=docker redis-server status
+  assert_equal 1 "$status"
+  assert_include "_HAKO_REDIS_IMAGE is required" "$output"
+  assert_include "activated mise environment" "$output"
+
+  capture output status env PATH="$install_dir/bin:$PATH" HAKO_ADAPTER=invalid redis-server status
+  assert_equal 1 "$status"
+  assert_include "HAKO_ADAPTER must be set to 'apple' or 'docker'" "$output"
+}
+
 versions_test() {
   local adapter="${1}"
   local cache_dir output
@@ -35,8 +52,8 @@ versions_test() {
   cache_dir="$(create_cache "$ROOT_DIR" redis)"
   output="$(HAKO_ADAPTER="$adapter" XDG_CACHE_HOME="$cache_dir" mise ls-remote hako:redis)"
 
-  assert 6 <<<"$output"
-  assert 7 <<<"$output"
+  assert_line 6 <<<"$output"
+  assert_line 7 <<<"$output"
   refute 5 <<<"$output"
   refute 8.0.1-alpine3.21 <<<"$output"
   refute 9 <<<"$output"
@@ -51,9 +68,9 @@ service_test() {
 
   run "$adapter" "$install_dir" redis-server start
   run "$adapter" "$install_dir" redis-server status
-  assert PONG < <(run "$adapter" "$install_dir" redis-cli --raw ping)
-  assert OK < <(run "$adapter" "$install_dir" redis-cli --raw set hako:persistence survived)
-  assert survived < <(run "$adapter" "$install_dir" redis-cli --raw get hako:persistence)
+  assert_equal PONG "$(run "$adapter" "$install_dir" redis-cli --raw ping)"
+  assert_equal OK "$(run "$adapter" "$install_dir" redis-cli --raw set hako:persistence survived)"
+  assert_equal survived "$(run "$adapter" "$install_dir" redis-cli --raw get hako:persistence)"
 }
 
 for adapter in "${ADAPTERS[@]}"; do
@@ -71,6 +88,7 @@ for adapter in "${ADAPTERS[@]}"; do
   trap 'cleanup "$adapter"' EXIT
 
   setup "$adapter"
+  activation_state_test
   versions_test "$adapter"
   service_test "$adapter"
   cleanup "$adapter"

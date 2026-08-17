@@ -33,9 +33,22 @@ ${XDG_CACHE_HOME:-$HOME/.cache}/hako/redis.json
 
 Set `CACHE=0` to bypass the cache. Installation pulls `redis:<version>-alpine`; wrapper execution never pulls an image.
 
+Installation and execution require the same global `HAKO_ADAPTER` value (`apple` or `docker`). Hako does not auto-detect a runtime.
+To change adapters, stop Redis through the old adapter, update the global setting, force-reinstall the tool, and then start it through the new adapter. Otherwise, its old container can remain in the previous runtime.
+
 The supported Redis range crosses license eras. Releases through 7.2.4 use BSD-3-Clause, Redis 7.4.x through 7.8.x use RSALv2 or SSPLv1, and Redis 8 and newer offer RSALv2, SSPLv1, or AGPLv3. Review the [official image license summary](https://hub.docker.com/_/redis) and [Redis licensing overview](https://redis.io/legal/licenses/) for the exact selected release.
 
 ## Environment and networking
+
+Activation exports the wrapper state:
+
+```text
+_HAKO_REDIS_VERSION=<resolved-version>
+_HAKO_REDIS_IMAGE=redis:<resolved-version>-alpine
+_HAKO_REDIS_ISOLATED=<true-or-false>
+```
+
+These underscore-prefixed values are internal wrapper state. The wrapper requires them, so run Redis commands in an activated mise environment. No installation manifest is used.
 
 When `HAKO_DOMAIN` is configured, activation exports:
 

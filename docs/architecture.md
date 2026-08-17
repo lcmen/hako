@@ -39,27 +39,16 @@ Registry responses are cached for a limited time. Users can bypass the cache whe
 The install hook:
 
 1. Loads and validates the requested tool.
-2. Resolves an available container runtime.
+2. Validates the globally configured container runtime.
 3. Pulls the selected image.
 4. Copies the wrapper and its support files into the mise install directory.
-5. Writes an install manifest.
-6. Creates command links in the install `bin/` directory.
+5. Creates command links in the install `bin/` directory.
 
 Installed wrappers are self-contained. They use copies inside the versioned mise installation and do not link back to the plugin checkout.
 
-The manifest records the values needed at runtime:
-
-```text
-TOOL=<tool>
-VERSION=<version>
-IMAGE=<image>
-ISOLATED=<true-or-false>
-ADAPTER=<runtime>
-```
-
 ### Activation
 
-The environment hook adds the install `bin/` directory to `PATH`. It then asks the tool module for any additional environment values.
+The environment hook adds the install `bin/` directory to `PATH`. It exports the resolved version, exact image, and isolation state through underscore-prefixed, service-specific variables reserved for Hako's wrappers, then asks the tool module for any additional environment values. There is no per-installation manifest.
 
 Activation prepares commands for use. It does not start a server.
 
@@ -70,9 +59,9 @@ All command links for a tool point to the same wrapper. The wrapper checks the n
 At startup, the wrapper:
 
 1. Finds its versioned install directory.
-2. Loads the install manifest.
+2. Validates activation-provided version, image, and isolation state.
 3. Loads shared context helpers.
-4. Loads the runtime adapter selected during installation.
+4. Loads the runtime adapter named by the global `HAKO_ADAPTER` setting.
 
 Wrappers manage persistent server containers and short-lived client containers. Before an operation uses the runtime or image, it checks that they are available. Wrappers do not pull missing images during normal command execution. A missing image causes a clear error so the user can reinstall or pull it again.
 
@@ -86,7 +75,7 @@ Docker and Apple Container use different command-line interfaces. Adapter files 
 - creating the shared network;
 - checking local images and runtime availability.
 
-The wrapper calls this common interface instead of calling a runtime directly. An installation keeps its selected adapter in the manifest. A conflicting runtime choice is rejected until the tool is reinstalled.
+The wrapper calls this common interface instead of calling a runtime directly. `HAKO_ADAPTER` must globally select `apple` or `docker`. Installation and execution use that same explicit setting; adapters are never auto-detected. Changing it requires stopping services through the old runtime, updating the setting, force-reinstalling tools to pull their images into the new runtime, and starting them again. Hako does not coordinate containers left running across runtimes.
 
 ## Identity, Storage, and Isolation
 
@@ -120,7 +109,7 @@ Adding another database tool normally requires:
 - a wrapper for its server and client behavior;
 - registration in the supported tool list.
 
-Shared registry, cache, install, manifest, context, and adapter code should be reused where their behavior is truly common.
+Shared registry, cache, install, context, and adapter code should be reused where their behavior is truly common.
 
 Runtime adapter functions may still contain assumptions from the currently implemented tool. Review those assumptions before reusing an operation for a new database.
 

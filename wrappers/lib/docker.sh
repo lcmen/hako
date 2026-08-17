@@ -288,12 +288,6 @@ ensure_network() {
 #######################################
 require_adapter() {
   log_debug "Validating Docker adapter"
-  if [[ -n "${HAKO_ADAPTER:-}" && "$HAKO_ADAPTER" != "$ADAPTER" ]]; then
-    log_error "Hako install uses adapter $ADAPTER, but HAKO_ADAPTER requests $HAKO_ADAPTER"
-    log_error "Update mise config, then run mise install --force hako:$TOOL@$VERSION to reinstall with the intended adapter"
-    exit 1
-  fi
-
   if ! command -v docker >/dev/null 2>&1; then
     log_error "Docker is required for this hako installation"
     exit 1

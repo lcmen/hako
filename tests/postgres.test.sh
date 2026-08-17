@@ -10,6 +10,9 @@ ROOT_DIR="$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT_DIR/tests/helpers.sh"
 
 setup() {
+  export _HAKO_POSTGRES_IMAGE=postgres:18.4-alpine
+  export _HAKO_POSTGRES_ISOLATED=true
+  export _HAKO_POSTGRES_VERSION=18.4
   export PGPASS=postgres
   export PGUSER=postgres
   local adapter="${1}"
@@ -17,6 +20,20 @@ setup() {
 
   INSTALL_DIRS+=("$install_dir")
   install_wrapper "$ROOT_DIR" "$install_dir" postgres pg_ctl psql pg_dump pg_restore
+}
+
+activation_state_test() {
+  local install_dir="${INSTALL_DIRS[$((${#INSTALL_DIRS[@]} - 1))]}"
+  local output status
+
+  capture output status env -u _HAKO_POSTGRES_VERSION PATH="$install_dir/bin:$PATH" HAKO_ADAPTER=docker pg_ctl status
+  assert_equal 1 "$status"
+  assert_include "_HAKO_POSTGRES_VERSION is required" "$output"
+  assert_include "activated mise environment" "$output"
+
+  capture output status env PATH="$install_dir/bin:$PATH" HAKO_ADAPTER=invalid pg_ctl status
+  assert_equal 1 "$status"
+  assert_include "HAKO_ADAPTER must be set to 'apple' or 'docker'" "$output"
 }
 
 cleanup() {
@@ -34,10 +51,10 @@ versions_test() {
   cache_dir="$(create_cache "$ROOT_DIR" postgres)"
   output="$(HAKO_ADAPTER="$adapter" XDG_CACHE_HOME="$cache_dir" mise ls-remote hako:postgres)"
 
-  assert 12 <<<"$output"
-  assert 13 <<<"$output"
-  assert 18 <<<"$output"
-  assert 18.4 <<<"$output"
+  assert_line 12 <<<"$output"
+  assert_line 13 <<<"$output"
+  assert_line 18 <<<"$output"
+  assert_line 18.4 <<<"$output"
   refute 18.4-alpine3.22 <<<"$output"
 }
 
@@ -70,6 +87,7 @@ for adapter in "${ADAPTERS[@]}"; do
   trap 'cleanup "$adapter"' EXIT
 
   setup "$adapter"
+  activation_state_test
   versions_test "$adapter"
   service_test "$adapter"
   cleanup "$adapter"

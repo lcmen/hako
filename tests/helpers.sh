@@ -97,13 +97,74 @@ adapter_pull() {
 }
 
 #######################################
+# Captures a command's combined output and exit status.
+# Arguments:
+#   $1: Variable name that receives combined stdout and stderr.
+#   $2: Variable name that receives the exit status.
+#   Remaining arguments: Command and arguments to run.
+# Returns:
+#   0 after assigning both variables.
+#######################################
+capture() {
+  local output_var="${1:?output variable is required}"
+  local status_var="${2:?status variable is required}"
+  shift 2
+  local captured_status captured_output
+
+  if captured_output="$("$@" 2>&1)"; then
+    captured_status=0
+  else
+    captured_status=$?
+  fi
+
+  printf -v "$output_var" '%s' "$captured_output"
+  printf -v "$status_var" '%s' "$captured_status"
+}
+
+#######################################
+# Asserts that two values are equal.
+# Arguments:
+#   $1: Expected value.
+#   $2: Actual value.
+# Returns:
+#   0 when the values are equal; 1 otherwise.
+#######################################
+assert_equal() {
+  local expected="${1-}"
+  local actual="${2-}"
+
+  if [[ "$actual" != "$expected" ]]; then
+    echo "expected '$expected', got '$actual'" >&2
+    return 1
+  fi
+}
+
+#######################################
+# Asserts that text contains a substring.
+# Arguments:
+#   $1: Expected substring.
+#   $2: Text to search.
+# Returns:
+#   0 when the substring is present; 1 otherwise.
+#######################################
+assert_include() {
+  local expected="${1:?expected text is required}"
+  local actual="${2-}"
+
+  if [[ "$actual" != *"$expected"* ]]; then
+    echo "expected text to include: $expected" >&2
+    return 1
+  fi
+}
+
+#######################################
 # Asserts that stdin contains an exact line.
 # Arguments:
 #   $1: Expected line.
 # Returns:
 #   0 when stdin contains the line; exits with an error otherwise.
 #######################################
-assert() {
+assert_line() {
   local expected="${1:?expected line is required}"
 
   if ! sed 's/\r$//' | grep -Fx "$expected" >/dev/null; then
@@ -129,7 +190,7 @@ refute() {
 }
 
 #######################################
-# Creates a temporary install directory and writes its manifest.
+# Creates a temporary install directory and pulls its image.
 # Arguments:
 #   $1: Tool name.
 #   $2: Tool version.
@@ -138,12 +199,12 @@ refute() {
 # Outputs:
 #   Temporary install directory path.
 # Returns:
-#   0 after the directory and manifest are created.
+#   0 after the directory is created and the image is available.
 #######################################
 install_tool() {
   local tool="${1:?tool is required}"
   local version="${2:?version is required}"
-  local isolated="${3:?isolated is required}"
+  : "${3:?isolated is required}"
   local adapter="${4:?adapter is required}"
   local install_dir image
 
@@ -151,14 +212,6 @@ install_tool() {
   image="${tool}:${version}-alpine"
 
   adapter_pull "$adapter" "$image"
-
-  cat >"$install_dir/manifest" <<EOF
-TOOL=$tool
-VERSION=$version
-IMAGE=$image
-ISOLATED=$isolated
-ADAPTER=$adapter
-EOF
 
   printf '%s\n' "$install_dir"
 }
